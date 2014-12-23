@@ -1,0 +1,170 @@
+<?xml version="1.0"?>
+
+<?xml-stylesheet href="chrome://communicator/skin/" type="text/css"?>
+<?xml-stylesheet href="chrome://messenger/skin/prefPanels.css" type="text/css"?>
+<?xml-stylesheet href="chrome://communicator/skin/pref/pref.css" type="text/css"?>
+
+<overlay id="enforward-onsettings-overlay"
+	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+	<prefpane id="ONPref" label="OneNote" flex="1" onpaneload="gENFONSettings.onLoad();">
+		<preferences>
+			<preference id="pref_onenote.email" name="extensions.enforward.onenote.email" type="unichar"/>
+			<preference id="pref_onenote.forward_id" name="extensions.enforward.onenote.forward_id" type="unichar"/>
+			<preference id="pref_onenote.send_interval" name="extensions.enforward.onenote.send_interval" type="int"/>
+			<preference id="pref_onenote.save_sent" name="extensions.enforward.onenote.save_sent" type="bool"/>
+			<preference id="pref_onenote.mark_as_forwarded" name="extensions.enforward.onenote.mark_as_forwarded" type="bool"/>
+			<preference id="pref_onenote.title" name="extensions.enforward.onenote.title" type="unichar"/>
+			<preference id="pref_onenote.rm_re_fwd" name="extensions.enforward.onenote.rm_re_fwd" type="bool"/>
+			<preference id="pref_onenote.rm_mltag" name="extensions.enforward.onenote.rm_mltag" type="bool"/>
+			<preference id="pref_onenote.attachments_forward_mode" name="extensions.enforward.onenote.attachments_forward_mode" type="int"/>
+			<preference id="pref_onenote.attachments_ext_filter" name="extensions.enforward.onenote.attachments_ext_filter" type="unichar"/>
+			<preference id="pref_onenote.attachments_size_filter" name="extensions.enforward.onenote.attachments_size_filter" type="unichar"/>
+			<preference id="pref_onenote.enable_skey" name="extensions.enforward.onenote.enable_skey" type="bool"/>
+			<preference id="pref_onenote.skey" name="extensions.enforward.onenote.skey" type="unichar"/>
+			<preference id="pref_onenote.skey_alt" name="extensions.enforward.onenote.skey_alt" type="bool"/>
+			<preference id="pref_onenote.skey_ctrl" name="extensions.enforward.onenote.skey_ctrl" type="bool"/>
+			<preference id="pref_onenote.skey_meta" name="extensions.enforward.onenote.skey_meta" type="bool"/>
+		</preferences>
+		<tabbox>
+		<tabs>
+		  <tab id="gentab" label="General"/>
+		  <tab id="notetab" label="Note"/>
+		  <tab id="atttab" label="Attachments"/>
+		  <tab id="skeytab" label="Keyboard Shortcut"/>
+		</tabs>
+		<tabpanels>
+		  <!-- General -->
+		  <tabpanel orient="vertical">
+				<groupbox>
+					<caption label="Forwarding"/>
+					<hbox align="center">
+						<label value="OneNote Email Address:"/>
+						<textbox id="ENFONEmail" value="" flex="1" readonly="true" disabled="true"
+										 preference="pref_onenote.email" />
+					</hbox>
+					<hbox align="center">
+						<label value="Identity:"/>
+						<menulist id="ENFONIdList" preference="pref_onenote.forward_id"  >
+							<menupopup id="ENFONIdListPopup">
+							</menupopup>
+						</menulist>
+					</hbox>
+					<hbox align="center">
+						<label value="Interval between sending notes:"/>
+						<textbox id="ENFONSendInterval" type="number" min="0" max="3600" size="2" multiline="false"
+										wraparound="true"  preference="pref_onenote.send_interval" />
+						<label value="seconds"/>
+					</hbox>
+					<checkbox id="ENFONSaveInSent" label="Save note in sent folder"
+					  				preference="pref_onenote.save_sent" />
+					<checkbox id="ENFONMarkAsForward" label="Mark original message as forwarded"
+					  				preference="pref_onenote.mark_as_forwarded" />
+				</groupbox>
+			</tabpanel>
+			
+			<!-- Note -->
+			<tabpanel orient="vertical">
+					<grid flex="1">
+						<columns>
+							<column/>
+							<column flex="1"/>
+						</columns>
+						<rows>
+							<row align="center">
+								<label value="Note title:"/>
+								<textbox id="ENFONNoteTitle" value="%S" flex="1"
+												 preference="pref_onenote.title" />
+							</row>
+							<row align="center">
+								<spacer/>
+								<checkbox id="ENFONRmReFwd" label="Remove Re:, Fwd: and Fw: in front of subject"
+										preference="pref_onenote.rm_re_fwd" />
+							</row>
+							<row align="center">
+								<spacer/>
+								<checkbox id="ENFONRmMLTag" label="Remove [...] and (...) in front of subject"
+										preference="pref_onenote.rm_mltag" />
+							</row>
+						</rows>
+					</grid>
+			</tabpanel>
+			
+			<!-- Attachments -->
+			<tabpanel orient="vertical">
+				<label value="When a message has attachments:"/>
+				<hbox align="center">
+				<spacer style="width:2.0em;"/>
+				<radiogroup id="ENFONAttFwdMode" value="0" flex="1" preference="pref_onenote.attachments_forward_mode" >
+					<radio label="Forward all" value="0"/>
+					<radio label="Remove all" value="1"/>
+					<radio label="Ask me" value="2"/>
+					<radio label="Remove ones matched with AT LEAST ONE of the filter conditions" value="3"/>
+					<radio label="Remove ones matched with ALL of the filter conditions" value="4"/>
+					<groupbox orient="vertical">
+						<caption label="Filter conditions"/>
+						<hbox align="center">
+							<label value="Extension:"/>
+							<textbox id="ENFONAttExtFilter" flex="1" value="" placeholder="Input file extensions separated by commas. ex) exe,avi"
+											 preference="pref_onenote.attachments_ext_filter" />
+						</hbox>
+						<hbox align="center">
+							<label value="Size: more than"/>
+							<textbox id="ENFONAttSizeFilter" value="0" size="2" type="number" decimalplaces="2" increment="0.01" 
+											 preference="pref_onenote.attachments_size_filter" />
+							<label value="MB (0.00MB means disabled)"/>
+						</hbox>
+						</groupbox>
+				</radiogroup>
+				</hbox>
+				<hbox>
+				<spacer style="width:2.0em;"/>
+				<label value="NOTE: Detached attachments are not forwarded."/>
+				</hbox>
+			</tabpanel>
+			
+			<!-- Shortcut key -->
+		  <tabpanel>
+			<vbox flex="1">
+			  <!-- Normal Forward -->
+			  <groupbox>
+				<caption>
+					<checkbox label="Forward" id="ENFONSkeyEnable"
+										preference="pref_onenote.enable_skey" />
+				</caption>
+				<hbox align="center">
+				  <spacer style="height:0.5em"/>
+				  <hbox align="center">
+					<label value="Key:"/>
+					<groupbox orient="vertical" align="center" style="min-width:8.5em">
+					  <label id="ENFONSkey" value="" skey="" preference="pref_onenote.skey"
+						/>
+					</groupbox>
+					<spacer style="width:1.0em"/>
+					<button id="ENFONSkeyChangeButton" label="Change"
+					  disabled="false" onclick="gENFONSettings.controlKeyChange(event)"
+					  onkeypress="gENFONSettings.changeKey(event)"
+					  onblur="gENFONSettings.cancelKeyChange(event)"/>
+				  </hbox>
+				  <spacer style="height:1.0em;"/>
+				  <hbox align="center">
+					<label value="Modifier:"/>
+					<spacer style="height:1.0em"/>
+					<checkbox id="ENFONSkeyAlt" label="Alt"
+					  preference="pref_onenote.skey_alt" 
+					  />
+					<checkbox id="ENFONSkeyCtrl" label="Ctrl"
+					  preference="pref_onenote.skey_ctrl" 
+					  />
+					<checkbox id="ENFONSkeyMeta" label="Meta"
+					  preference="pref_onenote.skey_meta" 
+					  />
+				  </hbox>
+				</hbox>
+			  </groupbox>
+				<label value="NOTE: Settings are applied after restart of Thunderbird"/>
+			</vbox>
+		  </tabpanel>
+		</tabpanels>
+		</tabbox>
+	</prefpane>
+</overlay>

@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+
+<RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+		xmlns:em="http://www.mozilla.org/2004/em-rdf#">
+
+	<Description about="urn:mozilla:install-manifest">
+		<em:name>EnForward</em:name>
+		<em:version>0.1.00</em:version>
+		<em:description>Forward email to Wunderlist</em:description>
+		<em:creator>mozilla.jez@mckinley.biz</em:creator>
+		<em:id>wunderlist-extension@mckinley.biz</em:id>
+		<em:type>2</em:type>
+		<em:targetApplication>
+			<!-- Thunderbird -->
+			<Description>
+				<em:id>{3550f703-e582-4d05-9a08-453d09bdfdc6}</em:id>
+				<em:minVersion>17.0</em:minVersion>
+				<em:maxVersion>32.*</em:maxVersion>
+			</Description>
+		</em:targetApplication>
+		
+		<em:iconURL></em:iconURL>
+		<em:optionsURL>chrome://enforward/content/settings.xul</em:optionsURL>
+		<em:homepageURL>http://www.mckinley.biz</em:homepageURL>
+	</Description>
+</RDF>
