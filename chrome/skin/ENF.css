@@ -6,5 +6,5 @@ treechildren::-moz-tree-checkbox
 treechildren::-moz-tree-checkbox(checked)
 {
   /* checked checkbox treecells*/
-  list-style-image: url("chrome://enforward/skin/tick.png");
+  list-style-image: url("chrome://send_to_wunderlist/skin/tick.png");
 }

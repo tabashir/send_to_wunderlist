@@ -4,26 +4,24 @@
 <prefwindow
 	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
 	buttons="accept, cancel"
-  title="EnForward Preferences"
-  id="enforward-settings"
+  title="send_to_wunderlist Preferences"
+  id="send_to_wunderlist-settings"
   style="width:55em;height:45em" persist="screenX screenY"
   >
 
   <script type="application/x-javascript" src="chrome://global/content/nsUserSettings.js"/>
-  <script type="application/x-javascript" src="chrome://enforward/content/utils.js"/>
+  <script type="application/x-javascript" src="chrome://send_to_wunderlist/content/utils.js"/>
 
-	<prefpane id="EnPref" label="Evernote" flex="1"
-						src="chrome://enforward/content/settings_en.xul"/>
-	<prefpane id="ONPref" label="OneNote" flex="1"
-						src="chrome://enforward/content/settings_on.xul"/>
+	<prefpane id="ONPref" label="Wunderlist" flex="1"
+						src="chrome://send_to_wunderlist/content/settings_on.xul"/>
  	<prefpane id="TipsPref" label="Tips"  flex="1"
-						src="chrome://enforward/content/settings_tips.xul"/>
+						src="chrome://send_to_wunderlist/content/settings_tips.xul"/>
 	<!--
 	*Using multiple prefpanes
 	Note that when using multiple prefpanes in the same prefwindow, you must not put 
 	the <script> elements above the prefpane elements, but instead below them. 
 	Otherwise the dialog will show erratic behavior and not display correctly.
   -->
-	<script type="application/x-javascript" src="chrome://enforward/content/settings_en.js"/>
-	<script type="application/x-javascript" src="chrome://enforward/content/settings_on.js"/>
+	<script type="application/x-javascript" src="chrome://send_to_wunderlist/content/settings_en.js"/>
+	<script type="application/x-javascript" src="chrome://send_to_wunderlist/content/settings_on.js"/>
 </prefwindow>

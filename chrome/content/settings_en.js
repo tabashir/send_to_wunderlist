@@ -122,9 +122,9 @@ var gENFSettings = {
 		
 		this.onChangeAccountType();
 		//this.onToggleUseFolderName(document.getElementById("ENFUseFolderName"));
-		if (nsPreferences.getBoolPref("extensions.enforward.use_folder_name", false)) {//convert old pref
+		if (nsPreferences.getBoolPref("extensions.send_to_wunderlist.use_folder_name", false)) {//convert old pref
 			document.getElementById(this.prefix+"Notebook").setAttribute("value", "%F");
-			nsPreferences.setBoolPref("extensions.enforward.use_folder_name", false);
+			nsPreferences.setBoolPref("extensions.send_to_wunderlist.use_folder_name", false);
 		}
 		
 		this.loadMemoText();
@@ -137,9 +137,9 @@ var gENFSettings = {
 	
 	onChangeAccountType: function() {
 		var accType = document.getElementById(this.prefix+"AccType").getAttribute("value");
-		var maxSize = gENForwardUtils.getMaxSize(accType);
-		var maxSend = gENForwardUtils.getMaxSend(accType);
-		var todaySent = gENForwardUtils.checkLimitExpires(true) ? 0 : nsPreferences.getIntPref("extensions.enforward.sent_times", 0);
+		var maxSize = gsend_to_wunderlistUtils.getMaxSize(accType);
+		var maxSend = gsend_to_wunderlistUtils.getMaxSend(accType);
+		var todaySent = gsend_to_wunderlistUtils.checkLimitExpires(true) ? 0 : nsPreferences.getIntPref("extensions.send_to_wunderlist.sent_times", 0);
 		
 		document.getElementById(this.prefix+"NoteSize").setAttribute("value", maxSize);
 		document.getElementById(this.prefix+"SentNotes").setAttribute("value", todaySent+"/"+maxSend);
@@ -158,7 +158,7 @@ var gENFSettings = {
 		var tags = event.target.value;
 		var tagsArray = tags == "" ? [] : tags.split(" ");
 		var callback = {tags: tagsArray, isOK: false};
-		window.openDialog("chrome://enforward/content/ENFTagList.xul", "enforward-taglist", "chrome,modal,dialog,centerscreen", callback);
+		window.openDialog("chrome://send_to_wunderlist/content/ENFTagList.xul", "send_to_wunderlist-taglist", "chrome,modal,dialog,centerscreen", callback);
 		if (callback.isOK) {
 			event.target.value = callback.tags.join(" ");
 			var pref = document.getElementById(event.target.getAttribute("preference"));
@@ -169,11 +169,11 @@ var gENFSettings = {
 	},
 	
 	writeStringToFile: function(name, str) {
-		gENForwardUtils.writeStringToFile(name, str);
+		gsend_to_wunderlistUtils.writeStringToFile(name, str);
 	},
 	
 	loadFileToString: function(name) {
-		return gENForwardUtils.loadFileToString(name);
+		return gsend_to_wunderlistUtils.loadFileToString(name);
 	},
 	
 	//If aEvent == null then cancel key change

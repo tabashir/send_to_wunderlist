@@ -1,9 +1,9 @@
-var gENForwardUtils = {
+var gsend_to_wunderlistUtils = {
 	limitPremium: [50, 250], //[size max, sent max]
 	limitStandard: [25, 50], //[size max, sent max]
 
 	getMaxSize: function(account) {
-		if (!account) account = nsPreferences.copyUnicharPref("extensions.enforward.account.type", "standard");
+		if (!account) account = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.account.type", "standard");
 		var ret = 0;
 		switch (account) {
 			case "standard":
@@ -21,7 +21,7 @@ var gENForwardUtils = {
 	},
 
 	getMaxSend: function(account) {
-		if (!account) account = nsPreferences.copyUnicharPref("extensions.enforward.account.type", "standard");
+		if (!account) account = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.account.type", "standard");
 		var ret = 0;
 		switch (account) {
 			case "standard":
@@ -39,7 +39,7 @@ var gENForwardUtils = {
 	},
 
 	checkMsgSize: function(msgFile) {
-		if (nsPreferences.getBoolPref("extensions.enforward.alert_limit", false)) {
+		if (nsPreferences.getBoolPref("extensions.send_to_wunderlist.alert_limit", false)) {
 			var size = msgFile.fileSize;
 			return size < this.getMaxSize() * 1024 * 1024;
 		} else {
@@ -48,8 +48,8 @@ var gENForwardUtils = {
 	},
 	
 	checkSentTimes: function() {
-		if (nsPreferences.getBoolPref("extensions.enforward.alert_limit", false)) {
-			var sent = nsPreferences.getIntPref("extensions.enforward.sent_times", 0);
+		if (nsPreferences.getBoolPref("extensions.send_to_wunderlist.alert_limit", false)) {
+			var sent = nsPreferences.getIntPref("extensions.send_to_wunderlist.sent_times", 0);
 			return sent < this.getMaxSend();
 		} else {
 			return true;
@@ -57,10 +57,10 @@ var gENForwardUtils = {
 	},
 	
 	checkLimitExpires: function(force) {
-		if (force || nsPreferences.getBoolPref("extensions.enforward.alert_limit", false)) {
+		if (force || nsPreferences.getBoolPref("extensions.send_to_wunderlist.alert_limit", false)) {
 			var date = this.localDateToEnDate(new Date());
 			var today = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate();
-			var last = nsPreferences.copyUnicharPref("extensions.enforward.sent_date", "");
+			var last = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.sent_date", "");
 			return today != last;
 		} else {
 			return true;
@@ -79,7 +79,7 @@ var gENForwardUtils = {
 		var file = Components.classes["@mozilla.org/file/directory_service;1"]
 									.getService(Components.interfaces.nsIProperties)
 									.get("ProfD", Components.interfaces.nsILocalFile);
-		file.append("EnForward");
+		file.append("send_to_wunderlist");
 		file.append(name);
 		if (file.exists()) {
 			file.remove(true);
@@ -109,7 +109,7 @@ var gENForwardUtils = {
 			var file = Components.classes["@mozilla.org/file/directory_service;1"]
 										.getService(Components.interfaces.nsIProperties)
 										.get("ProfD", Components.interfaces.nsILocalFile);
-			file.append("EnForward");
+			file.append("send_to_wunderlist");
 			file.append(name);
 		
 			if (file.exists()) {
@@ -136,7 +136,7 @@ var gENForwardUtils = {
 		var file = Components.classes["@mozilla.org/file/directory_service;1"]
 									.getService(Components.interfaces.nsIProperties)
 									.get("ProfD", Components.interfaces.nsILocalFile);
-		file.append("EnForward");
+		file.append("send_to_wunderlist");
 		file.append(name);
 		
 		return file;

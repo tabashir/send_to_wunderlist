@@ -4,11 +4,11 @@
 <?xml-stylesheet href="chrome://messenger/skin/prefPanels.css" type="text/css"?>
 <?xml-stylesheet href="chrome://communicator/skin/pref/pref.css" type="text/css"?>
 
-<overlay id="enforward-ensettings-tips-overlay"
+<overlay id="send_to_wunderlist-ensettings-tips-overlay"
 	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 	<prefpane id="TipsPref" label="Tips" flex="1">
 		<preferences>
-			<preference id="PrefPreviewMode" name="extensions.enforward.preview_mode" type="bool"/>
+			<preference id="PrefPreviewMode" name="extensions.send_to_wunderlist.preview_mode" type="bool"/>
 		</preferences>
 		<tabbox>
 		<tabs>

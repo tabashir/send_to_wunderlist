@@ -4,7 +4,7 @@
 		xmlns:em="http://www.mozilla.org/2004/em-rdf#">
 
 	<Description about="urn:mozilla:install-manifest">
-		<em:name>EnForward</em:name>
+		<em:name>send_to_wunderlist</em:name>
 		<em:version>0.1.00</em:version>
 		<em:description>Forward email to Wunderlist</em:description>
 		<em:creator>mozilla.jez@mckinley.biz</em:creator>
@@ -20,7 +20,7 @@
 		</em:targetApplication>
 		
 		<em:iconURL></em:iconURL>
-		<em:optionsURL>chrome://enforward/content/settings.xul</em:optionsURL>
+		<em:optionsURL>chrome://send_to_wunderlist/content/settings.xul</em:optionsURL>
 		<em:homepageURL>http://www.mckinley.biz</em:homepageURL>
 	</Description>
 </RDF>

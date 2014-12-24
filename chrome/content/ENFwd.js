@@ -2,7 +2,7 @@ Components.utils.import("resource:///modules/iteratorUtils.jsm"); // import toXP
 Components.utils.import("resource:///modules/gloda/mimemsg.js"); // import MsgHdrToMimeMessage
 Components.utils.import("resource:///modules/iteratorUtils.jsm"); // for fixIterator
 
-var gENForward = {
+var gsend_to_wunderlist = {
 	email: null,
 	msgCompFields: null,
 	msgSend: null,
@@ -43,7 +43,7 @@ var gENForward = {
 
 		this.setShortcutKey(); //for Normal Forward
 		this.setShortcutKey(true); //for Forward with reminder
-		this.setShortcutKey(false, true); //for OneNote
+		this.setShortcutKey(false, true); //for wunderlist
 		this.changePopupMenuState();
 		
 		var that = this;
@@ -70,7 +70,7 @@ var gENForward = {
 		
 		var filterFuncON = {
 			id: "{C83FDE78-4980-4a97-B91A-47A4B98761A7-ON}",
-			name: "Forward to OneNote",
+			name: "Forward to wunderlist",
 	
 			apply: function(aMsgHdrs, aActionValue, aListener, aType, aMsgWindow) {
 				var msgs = [x for (x in fixIterator(aMsgHdrs, Components.interfaces.nsIMsgDBHdr))];
@@ -95,37 +95,37 @@ var gENForward = {
 		filterService.addCustomAction(filterFuncON);
 	},
 	
-	setShortcutKey: function(rem, onenote) {
+	setShortcutKey: function(rem, wunderlist) {
 		var prefix = rem ? "rem_" : "";
-		var app = onenote ? "onenote." : "";
+		var app = wunderlist ? "wunderlist." : "";
 		var keyElem = null;
 		if (rem) {
-			keyElem = onenote ? document.getElementById("ENF:key_FwdMsgsRemON") : document.getElementById("ENF:key_FwdMsgsRem");
+			keyElem = wunderlist ? document.getElementById("ENF:key_FwdMsgsRemON") : document.getElementById("ENF:key_FwdMsgsRem");
 		} else {
-			keyElem = onenote ? document.getElementById("ENF:key_FwdMsgsON") : document.getElementById("ENF:key_FwdMsgs");
+			keyElem = wunderlist ? document.getElementById("ENF:key_FwdMsgsON") : document.getElementById("ENF:key_FwdMsgs");
 		}
 
-		if (!nsPreferences.getBoolPref("extensions.enforward." + app + prefix + "enable_skey", false)) {
+		if (!nsPreferences.getBoolPref("extensions.send_to_wunderlist." + app + prefix + "enable_skey", false)) {
 			keyElem.setAttribute("disabled", true);
 			return;
 		}
 
-		var skey = nsPreferences.copyUnicharPref("extensions.enforward." + app + prefix + "skey", "");
+		var skey = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist." + app + prefix + "skey", "");
 		if (!skey) {
 			keyElem.setAttribute("disabled", true);
 			return;
 		}
 
 		var modifiers = [];
-		if (nsPreferences.getBoolPref("extensions.enforward." + app + prefix + "skey_ctrl", false)) {
+		if (nsPreferences.getBoolPref("extensions.send_to_wunderlist." + app + prefix + "skey_ctrl", false)) {
 			modifiers.push("control");
 		}
 
-		if (nsPreferences.getBoolPref("extensions.enforward." + app + prefix + "skey_alt", false)) {
+		if (nsPreferences.getBoolPref("extensions.send_to_wunderlist." + app + prefix + "skey_alt", false)) {
 			modifiers.push("alt");
 		}
 
-		if (nsPreferences.getBoolPref("extensions.enforward." + app + prefix + "skey_meta", false)) {
+		if (nsPreferences.getBoolPref("extensions.send_to_wunderlist." + app + prefix + "skey_meta", false)) {
 			modifiers.push("meta");
 		}
 
@@ -137,7 +137,7 @@ var gENForward = {
 	
 	finalize: function(){
 		var tmpDir = this.dirService.get("TmpD", Components.interfaces.nsIFile);
-		tmpDir.append("EnForward");
+		tmpDir.append("send_to_wunderlist");
 		try {
 			tmpDir.remove(true);
 		}catch(e){}
@@ -176,11 +176,11 @@ var gENForward = {
 	},
 	
 	confirmENEmail: function() {
-		this.email = nsPreferences.copyUnicharPref("extensions.enforward.email", "");
+		this.email = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.email", "");
 		if (!this.email) {
-			alert("Please input your Evernote email address in EnForward settings.");
-			window.openDialog("chrome://enforward/content/settings.xul", "enforward-settings", "chrome,modal,dialog,centerscreen");
-			this.email = nsPreferences.copyUnicharPref("extensions.enforward.email", "");
+			alert("Please input your Evernote email address in send_to_wunderlist settings.");
+			window.openDialog("chrome://send_to_wunderlist/content/settings.xul", "send_to_wunderlist-settings", "chrome,modal,dialog,centerscreen");
+			this.email = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.email", "");
 			if (!this.email) {
 				document.getElementById("statusText").setAttribute("label", "No Evernote email address. Canceled.");
 				return false;
@@ -194,7 +194,7 @@ var gENForward = {
 		this.forwardMsgsByFilter(msgs, true);
 	},
 	
-	forwardMsgsByFilter: function(msgs, onenote) {
+	forwardMsgsByFilter: function(msgs, wunderlist) {
 		var req = {
 			account: null,
 			id: null,
@@ -203,8 +203,8 @@ var gENForward = {
 			totalMsgs: 0
 		};
 		
-		if(!this.fillAccountInfo(msgs[0].folder.rootFolder.server, req, onenote)) return;
-		req.noteInfo = this.createNoteInfo(msgs, false, {date: "", enable: false}, onenote);
+		if(!this.fillAccountInfo(msgs[0].folder.rootFolder.server, req, wunderlist)) return;
+		req.noteInfo = this.createNoteInfo(msgs, false, {date: "", enable: false}, wunderlist);
 		req.totalMsgs = req.noteInfo.length;
 		
 		this.registerRequest(req);
@@ -215,7 +215,7 @@ var gENForward = {
 		this.forwardSelectedMsgs(event, false, skey, true);
 	},
 	
-	forwardSelectedMsgs: function(event, reminder, skey, onenote) {
+	forwardSelectedMsgs: function(event, reminder, skey, wunderlist) {
 		var pressShift = false;
 		if (event) {
 			event.stopPropagation();
@@ -237,7 +237,7 @@ var gENForward = {
 		
 		var remInfo = {date: "", enable: false};
 		if (reminder && !pressShift) {
-			window.openDialog("chrome://enforward/content/ENFReminder.xul", "enforward-reminder", "chrome,modal,dialog,centerscreen", remInfo);
+			window.openDialog("chrome://send_to_wunderlist/content/ENFReminder.xul", "send_to_wunderlist-reminder", "chrome,modal,dialog,centerscreen", remInfo);
 			if (!remInfo.enable) return;
 		}
 
@@ -246,22 +246,22 @@ var gENForward = {
 			id: null,
 			noteInfo: null,
 			isGmailIMAP: false,
-			onenote: onenote,
+			wunderlist: wunderlist,
 			totalMsgs: 0
 		};
 
 		//var server = gFolderDisplay.displayedFolder.rootFolder.server;
-		//if(!this.fillAccountInfo(server, req, onenote)) return;
+		//if(!this.fillAccountInfo(server, req, wunderlist)) return;
 		
-		req.noteInfo = this.createNoteInfo(gFolderDisplay.selectedMessages, pressShift, remInfo, onenote);
+		req.noteInfo = this.createNoteInfo(gFolderDisplay.selectedMessages, pressShift, remInfo, wunderlist);
 		
 		req.totalMsgs = req.noteInfo.length;
 		if (req.totalMsgs > 0) {
 			req.noteInfo[0].selection = this.selectionToHTML(); 
 		}
 
-		if (!onenote && nsPreferences.getBoolPref("extensions.enforward.show_conf_dialog", false)) {
-			window.openDialog("chrome://enforward/content/ENFConfirm.xul", "enforward-confirm", "chrome,modal,dialog,centerscreen", req.noteInfo);
+		if (!wunderlist && nsPreferences.getBoolPref("extensions.send_to_wunderlist.show_conf_dialog", false)) {
+			window.openDialog("chrome://send_to_wunderlist/content/ENFConfirm.xul", "send_to_wunderlist-confirm", "chrome,modal,dialog,centerscreen", req.noteInfo);
 			req.totalMsgs = req.noteInfo.sendNum;
 			if (!req.noteInfo.sendNum) {
 				return;
@@ -272,9 +272,9 @@ var gENForward = {
 		this.doNextRequest();
 	},
 	
-	fillAccountInfo: function(server, req, onenote) {
-		var idPref = onenote ? nsPreferences.copyUnicharPref("extensions.enforward.onenote.forward_id", "/")
-												 : nsPreferences.copyUnicharPref("extensions.enforward.forward_id", "auto");
+	fillAccountInfo: function(server, req, wunderlist) {
+		var idPref = wunderlist ? nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.wunderlist.forward_id", "/")
+												 : nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.forward_id", "auto");
 		req.accountName = server.prettyName ? server.prettyName : "";
 		if (idPref != "auto") {
 			var accAndId = idPref.split("/");
@@ -308,8 +308,8 @@ var gENForward = {
 		var req = this.requests.shift();
 		if (!req) return;
 		
-		if (req.onenote) {
-			this.email = nsPreferences.copyUnicharPref("extensions.enforward.onenote.email", "me@onenote.com");
+		if (req.wunderlist) {
+			this.email = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.wunderlist.email", "me@wunderlist.com");
 		} else if (!this.confirmENEmail()) {
 			this.emptyQueue();
 			return;
@@ -336,7 +336,7 @@ var gENForward = {
 					var req = {};
 					//var server = gFolderDisplay.displayedFolder.rootFolder.server;
 					var server = info.msgHdr.folder.rootFolder.server;
-					if (this.fillAccountInfo(server, req, info.onenote)) { 
+					if (this.fillAccountInfo(server, req, info.wunderlist)) { 
 						this.account = req.account;
 						this.id = req.id;
 						this.forwardMsg(info);
@@ -356,29 +356,29 @@ var gENForward = {
 		}
 	},
 	
-	createNoteInfo: function(selectedMsgs, append, reminder, onenote) {
+	createNoteInfo: function(selectedMsgs, append, reminder, wunderlist) {
 		var noteInfo = [];
-		var titlePref = onenote ? nsPreferences.copyUnicharPref("extensions.enforward.onenote.title", "%S")
-													  : nsPreferences.copyUnicharPref("extensions.enforward.title", "%S");
-		var notebookPref = onenote ? ""
-															 : nsPreferences.copyUnicharPref("extensions.enforward.notebook", "");
-		var defaultTagsPref = onenote ? ""
-																	: nsPreferences.copyUnicharPref("extensions.enforward.tags", "");
-		if (!onenote && nsPreferences.getBoolPref("extensions.enforward.use_folder_name", false)) {//old pref
+		var titlePref = wunderlist ? nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.wunderlist.title", "%S")
+													  : nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.title", "%S");
+		var notebookPref = wunderlist ? ""
+															 : nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.notebook", "");
+		var defaultTagsPref = wunderlist ? ""
+																	: nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.tags", "");
+		if (!wunderlist && nsPreferences.getBoolPref("extensions.send_to_wunderlist.use_folder_name", false)) {//old pref
 			notebookPref = "%F";
 		}
 		var len = selectedMsgs.length;
 		for (var i=0; i<len; i++) {
 			var msgHdr = selectedMsgs[i];
 			var defaultTags = "";
-			var tags = !onenote && nsPreferences.getBoolPref("extensions.enforward.add_msg_tags", false) ? this.getTagsForMsg(msgHdr) : [];
+			var tags = !wunderlist && nsPreferences.getBoolPref("extensions.send_to_wunderlist.add_msg_tags", false) ? this.getTagsForMsg(msgHdr) : [];
 			if (defaultTagsPref) {
-				defaultTags = this.expandMetaCharacters(defaultTagsPref, msgHdr, true, onenote);
+				defaultTags = this.expandMetaCharacters(defaultTagsPref, msgHdr, true, wunderlist);
 				tags = tags.concat(defaultTags.split(/\s*,\s*/));
 			}
 			
-			var title = this.expandMetaCharacters(titlePref, msgHdr, true, onenote);
-			var notebook = this.expandMetaCharacters(notebookPref, msgHdr, true, onenote);
+			var title = this.expandMetaCharacters(titlePref, msgHdr, true, wunderlist);
+			var notebook = this.expandMetaCharacters(notebookPref, msgHdr, true, wunderlist);
 			var info = {
 				msgHdr: msgHdr,
 				title: title,
@@ -390,7 +390,7 @@ var gENForward = {
 				delAttachments: [],
 				fwdAttachments: [],
 				selection: "",
-				onenote: onenote,
+				wunderlist: wunderlist,
 				canceled: false
 			};
 			
@@ -409,13 +409,13 @@ var gENForward = {
 	forwardMsg: function(info) {
 		var msgHdr = info.msgHdr;
 		
-		if (info.onenote || gENForwardUtils.checkLimitExpires() || gENForwardUtils.checkSentTimes()) {
+		if (info.wunderlist || gsend_to_wunderlistUtils.checkLimitExpires() || gsend_to_wunderlistUtils.checkSentTimes()) {
 			this.msgCompFields = Components.classes["@mozilla.org/messengercompose/composefields;1"]
 				.createInstance(Components.interfaces.nsIMsgCompFields);
 			this.msgCompFields.from = this.id.email;
 			this.msgCompFields.to = this.email;
 			
-			var saveSentPref = info.onenote ? "extensions.enforward.onenote.save_sent" : "extensions.enforward.save_sent";
+			var saveSentPref = info.wunderlist ? "extensions.send_to_wunderlist.wunderlist.save_sent" : "extensions.send_to_wunderlist.save_sent";
 			if (!nsPreferences.getBoolPref(saveSentPref, true) || this.isGmailIMAP) {
 				this.msgCompFields.fcc = "nocopy://";
 				this.msgCompFields.fcc2 = "nocopy://";
@@ -451,7 +451,7 @@ var gENForward = {
 	
 	getTagsForMsg: function(msgHdr) {
 		var curKeys = msgHdr.getStringProperty("keywords");
-		var ignoredTags = nsPreferences.copyUnicharPref("extensions.enforward.ignored_tags", "").split(" ");
+		var ignoredTags = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.ignored_tags", "").split(" ");
 		if (msgHdr.label) {
 		  curKeys += " $label" + msgHdr.label;
 		}
@@ -487,15 +487,15 @@ var gENForward = {
 	
 	saveSentDone: function() {
 		var sent = 0;
-		if (gENForwardUtils.checkLimitExpires(true)) {
+		if (gsend_to_wunderlistUtils.checkLimitExpires(true)) {
 			sent = 1;
-			var date = gENForwardUtils.localDateToEnDate(new Date());
+			var date = gsend_to_wunderlistUtils.localDateToEnDate(new Date());
 			var today = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate();
-			nsPreferences.setUnicharPref("extensions.enforward.sent_date", today);
+			nsPreferences.setUnicharPref("extensions.send_to_wunderlist.sent_date", today);
 		} else {
-			sent = nsPreferences.getIntPref("extensions.enforward.sent_times", 0) + 1;
+			sent = nsPreferences.getIntPref("extensions.send_to_wunderlist.sent_times", 0) + 1;
 		}
-		nsPreferences.setIntPref("extensions.enforward.sent_times", sent);
+		nsPreferences.setIntPref("extensions.send_to_wunderlist.sent_times", sent);
 	},
 	
 	getTagsString: function(tags) {
@@ -550,10 +550,10 @@ var gENForward = {
 		os.write(bodyStr, bodyStr.length);
 
 		//Header text
-		if (nsPreferences.getBoolPref("extensions.enforward.add_header", false)) {
-			var escape = !nsPreferences.getBoolPref("extensions.enforward.header_use_html", false);
-			var hdrBodyStr = this.expandMetaCharacters(this.text2html(gENForwardUtils.loadFileToString("ENFHeader.txt"), escape),
-																																msgHdr, false, info.fwdAttachments, info.delAttachments, true, info.onenote);
+		if (nsPreferences.getBoolPref("extensions.send_to_wunderlist.add_header", false)) {
+			var escape = !nsPreferences.getBoolPref("extensions.send_to_wunderlist.header_use_html", false);
+			var hdrBodyStr = this.expandMetaCharacters(this.text2html(gsend_to_wunderlistUtils.loadFileToString("ENFHeader.txt"), escape),
+																																msgHdr, false, info.fwdAttachments, info.delAttachments, true, info.wunderlist);
 			if (hdrBodyStr.length > 0) {
 				var hdrStr = "--" + mailHdr[1] + "\r\n" //boundary
 										+ "Content-Type: text/html; charset=UTF-8;\r\n"
@@ -627,10 +627,10 @@ var gENForward = {
 		}
 
 		//Footer text
-		if (nsPreferences.getBoolPref("extensions.enforward.add_footer", false)) {
-			var escape = !nsPreferences.getBoolPref("extensions.enforward.footer_use_html", false);
-			var ftrBodyStr = this.expandMetaCharacters(this.text2html(gENForwardUtils.loadFileToString("ENFFooter.txt"), escape),
-																																msgHdr, false, info.fwdAttachments, info.delAttachments, true, info.onenote);
+		if (nsPreferences.getBoolPref("extensions.send_to_wunderlist.add_footer", false)) {
+			var escape = !nsPreferences.getBoolPref("extensions.send_to_wunderlist.footer_use_html", false);
+			var ftrBodyStr = this.expandMetaCharacters(this.text2html(gsend_to_wunderlistUtils.loadFileToString("ENFFooter.txt"), escape),
+																																msgHdr, false, info.fwdAttachments, info.delAttachments, true, info.wunderlist);
 			if (ftrBodyStr.length > 0) {
 				var ftrStr = "\r\n" + "--" + mailHdr[1] + "\r\n" //boundary
 										+ "Content-Type: text/html; charset=UTF-8;\r\n"
@@ -806,8 +806,8 @@ var gENForward = {
 	sendMsgFile: function(info) {
 		var msgHdr = info.msgHdr;
 		var msgFile = null;
-		var appName = info.onenote ? "OneNote" : "Evernote";
-		if (!info.onenote && nsPreferences.getIntPref("extensions.enforward.forward_mode", 0) == 0) {
+		var appName = info.wunderlist ? "wunderlist" : "Evernote";
+		if (!info.wunderlist && nsPreferences.getIntPref("extensions.send_to_wunderlist.forward_mode", 0) == 0) {
 			dump("[ENF] Forward by Attachment mode\n");
 			msgFile = this.composeAsAttachment(info);
 		} else {
@@ -815,7 +815,7 @@ var gENForward = {
 			msgFile = this.composeAsInline(info);
 		}
 		
-		var previewMode = nsPreferences.getBoolPref("extensions.enforward.preview_mode", false);
+		var previewMode = nsPreferences.getBoolPref("extensions.send_to_wunderlist.preview_mode", false);
 		this.msgSend = Components.classes["@mozilla.org/messengercompose/send;1"]
 									.createInstance(Components.interfaces.nsIMsgSend);
 		var that = this;
@@ -853,8 +853,8 @@ var gENForward = {
 					document.getElementById("statusText").setAttribute("label", "Failed to send note.");
 				} else {
 					document.getElementById("statusText").setAttribute("label", "Forwarding to "+ appName + " ... done.");
-					if (!info.onenote) that.saveSentDone();
-					var markFwdPref = info.onenote ? "extensions.enforward.onenote.mark_as_forwarded" : "extensions.enforward.mark_as_forwarded"
+					if (!info.wunderlist) that.saveSentDone();
+					var markFwdPref = info.wunderlist ? "extensions.send_to_wunderlist.wunderlist.mark_as_forwarded" : "extensions.send_to_wunderlist.mark_as_forwarded"
 					if (nsPreferences.getBoolPref(markFwdPref, true)) {
 						//var msgKey = msgHdr.messageKey;
 						//var newHdr = msgHdr.folder.GetMessageHeader(msgKey);
@@ -864,7 +864,7 @@ var gENForward = {
 				}
 				
 				//do next
-				var sendIntPref = info.onenote ? "extensions.enforward.onenote.send_interval" : "extensions.enforward.send_interval"
+				var sendIntPref = info.wunderlist ? "extensions.send_to_wunderlist.wunderlist.send_interval" : "extensions.send_to_wunderlist.send_interval"
 				var waitSec = nsPreferences.getIntPref(sendIntPref, 1);
 				if (that.sentMsgs != that.totalMsgs) {
 					if (waitSec > 0) {
@@ -942,7 +942,7 @@ var gENForward = {
  										? this.msgSend.nsMsgQueueForLater
  										: this.msgSend.nsMsgDeliverNow;
  										
-		if (!gENForwardUtils.checkMsgSize(msgFile)) { //file size error
+		if (!gsend_to_wunderlistUtils.checkMsgSize(msgFile)) { //file size error
 			this.sentMsgs += 1;
 			alert("Note size exceeds the limit. Canceled.");
 			sendListener.onStopSending(null, "FILESIZE_ERROR", "", null);
@@ -1127,20 +1127,20 @@ var gENForward = {
 																);
 	},
 	
-	expandMetaCharacters: function(str, msgHdr, isTitle, fwdAtts, delAtts, escape, onenote) {
+	expandMetaCharacters: function(str, msgHdr, isTitle, fwdAtts, delAtts, escape, wunderlist) {
 		var sub = msgHdr.mime2DecodedSubject;
-		var app = onenote ? "onenote.": "";
+		var app = wunderlist ? "wunderlist.": "";
 		if (isTitle) {
-			if (nsPreferences.getBoolPref("extensions.enforward." + app + "rm_mltag",false)) {
+			if (nsPreferences.getBoolPref("extensions.send_to_wunderlist." + app + "rm_mltag",false)) {
 				sub = sub.replace(/^(?:\[[^\]]+\]|\([^\)]+\))+/i, "");
 			}
-			if (nsPreferences.getBoolPref("extensions.enforward." + app + "rm_re_fwd",false)) {  
+			if (nsPreferences.getBoolPref("extensions.send_to_wunderlist." + app + "rm_re_fwd",false)) {  
 				sub = sub.replace(/^(?:\s*re:\s*|\s*fwd:\s*|\s*fw:\s*)+/i, "");
 			} else if (msgHdr.flags & Components.interfaces.nsMsgMessageFlags.HasRe) {
 				sub = "Re: " + sub;
 			}
 		}
-		var provideLink = !onenote && !isTitle && nsPreferences.getBoolPref("extensions.enforward.mailto_link", false);
+		var provideLink = !wunderlist && !isTitle && nsPreferences.getBoolPref("extensions.send_to_wunderlist.mailto_link", false);
 		var author = this.createAddressesString(msgHdr.mime2DecodedAuthor, true, provideLink, false);
 		//var authorName = this.hdrParser.extractHeaderAddressName(author);
 		//if (authorName.indexOf("@")) authorName = authorName.split("@")[0]; //only email address. use account name to avoid conflict with notebook
@@ -1280,8 +1280,8 @@ var gENForward = {
 	
 	createTempFile: function() {
 		var tmpDir = this.dirService.get("TmpD", Components.interfaces.nsIFile);
-		tmpDir.append("EnForward");
-		tmpDir.append("enforward.tmp");
+		tmpDir.append("send_to_wunderlist");
+		tmpDir.append("send_to_wunderlist.tmp");
 		tmpDir.createUnique(Components.interfaces.nsIFile.NORMAL_FILE_TYPE, 0666);
 		return tmpDir;
 	},
@@ -1342,8 +1342,8 @@ var gENForward = {
 				var atts = mimeMsg.allAttachments;
 				var delAttachments = [];
 				var fwdAttachments = [];
-				var app = info.onenote ? "onenote." : ""
-				var fwdMode = nsPreferences.getIntPref("extensions.enforward." + app + "attachments_forward_mode", 0);
+				var app = info.wunderlist ? "wunderlist." : ""
+				var fwdMode = nsPreferences.getIntPref("extensions.send_to_wunderlist." + app + "attachments_forward_mode", 0);
 				
 				if (fwdMode == 1) {//remove all
 					for (var i=0; i<atts.length; i++) {
@@ -1361,9 +1361,9 @@ var gENForward = {
 						}
 					}
 				} else if (fwdMode == 3 || fwdMode == 4) { //filter
-					var extFilter = nsPreferences.copyUnicharPref("extensions.enforward." + app + "attachments_ext_filter", "");
+					var extFilter = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist." + app + "attachments_ext_filter", "");
 					extFilter = extFilter.split(/,\s*/);
-					var sizeFilter = nsPreferences.copyUnicharPref("extensions.enforward." + app + "attachments_size_filter", "0");
+					var sizeFilter = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist." + app + "attachments_size_filter", "0");
 					for (var i=0; i<atts.length; i++) {
 						var att = atts[i];
 						//var del = fwdMode == 3 ? extFilter.indexOf(att.name.split(".").pop()) > -1 || (sizeFilter > 0 && sizeFilter * 1024 * 1024 <= att.size)
@@ -1396,7 +1396,7 @@ var gENForward = {
 					}
 					
 					if (confirm) {
-						window.openDialog("chrome://enforward/content/ENFDelAttach.xul", "enforward-delattach", "chrome,modal,dialog,centerscreen", callback);
+						window.openDialog("chrome://send_to_wunderlist/content/ENFDelAttach.xul", "send_to_wunderlist-delattach", "chrome,modal,dialog,centerscreen", callback);
 					}
 	
 					if (callback.canceled) {
@@ -1425,5 +1425,5 @@ var gENForward = {
 	}
 };
 
-window.addEventListener("load", function(){gENForward.init()}, false);
-window.addEventListener("close", function(){gENForward.finalize()}, false);
+window.addEventListener("load", function(){gsend_to_wunderlist.init()}, false);
+window.addEventListener("close", function(){gsend_to_wunderlist.finalize()}, false);

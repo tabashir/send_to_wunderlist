@@ -1,5 +1,5 @@
-content enforward 	chrome/content/
-skin	enforward	chrome/skin/
+content send_to_wunderlist 	chrome/content/
+skin	send_to_wunderlist	chrome/skin/
 
-overlay	chrome://messenger/content/mailWindowOverlay.xul	chrome://enforward/content/ENFwd.xul
-style chrome://enforward/content/ENFConfirm.xul chrome://enforward/skin/ENF.css
+overlay	chrome://messenger/content/mailWindowOverlay.xul	chrome://send_to_wunderlist/content/ENFwd.xul
+style chrome://send_to_wunderlist/content/ENFConfirm.xul chrome://send_to_wunderlist/skin/ENF.css

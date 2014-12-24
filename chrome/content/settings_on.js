@@ -1,9 +1,9 @@
-function ENFONSettings(){}
-ENFONSettings.prototype = gENFSettings;
+function STWSettings(){}
+STWSettings.prototype = gENFSettings;
 
-var gENFONSettings = new ENFONSettings();
-gENFONSettings.init = function() {
-	this.prefix = "ENFON";
+var gSTWSettings = new STWSettings();
+gSTWSettings.init = function() {
+	this.prefix = "STW";
 	this.elementIDs = [
 /*
 			"Email",
@@ -29,11 +29,11 @@ gENFONSettings.init = function() {
 */
 	];
 
-	window.addEventListener("dialogaccept",function(){gENFONSettings.savePrefs();});
-	window.addEventListener("dialogcancel",function(){gENFONSettings.cancelPrefs();});
+	window.addEventListener("dialogaccept",function(){gSTWSettings.savePrefs();});
+	window.addEventListener("dialogcancel",function(){gSTWSettings.cancelPrefs();});
 }
 
 //Memo is not available
-gENFONSettings.saveMemoText = function() {}
-gENFONSettings.loadMemoText = function() {}
-gENFONSettings.onChangeAccountType = function() {}
+gSTWSettings.saveMemoText = function() {}
+gSTWSettings.loadMemoText = function() {}
+gSTWSettings.onChangeAccountType = function() {}
