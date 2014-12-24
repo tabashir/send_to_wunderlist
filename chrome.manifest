@@ -1,4 +1,4 @@
-content enforward chrome/content/
+content enforward 	chrome/content/
 skin	enforward	chrome/skin/
 
 overlay	chrome://messenger/content/mailWindowOverlay.xul	chrome://enforward/content/ENFwd.xul
