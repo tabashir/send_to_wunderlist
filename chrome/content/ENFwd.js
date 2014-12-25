@@ -47,52 +47,6 @@ var gsend_to_wunderlist = {
 		this.changePopupMenuState();
 		
 		var that = this;
-		var filterFunc = {
-			id: "{C83FDE78-4980-4a97-B91A-47A4B98761A7}",
-			name: "Forward to Evernote",
-	
-			apply: function(aMsgHdrs, aActionValue, aListener, aType, aMsgWindow) {
-				var msgs = [x for (x in fixIterator(aMsgHdrs, Components.interfaces.nsIMsgDBHdr))];
-				that.forwardMsgsByFilter(msgs);
-			},
-	
-			isValidForType: function(type, scope) {
-				return true;
-			},
-	
-			validateActionValue: function(value, folder, type) {
-				return null;
-			}, 
-	
-			allowDuplicates: false,
-			needsBody: true
-		};
-		
-		var filterFuncON = {
-			id: "{C83FDE78-4980-4a97-B91A-47A4B98761A7-ON}",
-			name: "Forward to wunderlist",
-	
-			apply: function(aMsgHdrs, aActionValue, aListener, aType, aMsgWindow) {
-				var msgs = [x for (x in fixIterator(aMsgHdrs, Components.interfaces.nsIMsgDBHdr))];
-				that.forwardMsgsByFilterON(msgs);
-			},
-	
-			isValidForType: function(type, scope) {
-				return true;
-			},
-	
-			validateActionValue: function(value, folder, type) {
-				return null;
-			}, 
-	
-			allowDuplicates: false,
-			needsBody: true
-		};
-	
-		var filterService = Components.classes["@mozilla.org/messenger/services/filters;1"]
-								.getService(Components.interfaces.nsIMsgFilterService);
-		filterService.addCustomAction(filterFunc);
-		filterService.addCustomAction(filterFuncON);
 	},
 	
 	setShortcutKey: function(rem, wunderlist) {
@@ -160,6 +114,7 @@ var gsend_to_wunderlist = {
 		var xmlSerializer = new XMLSerializer();
 		for (var i=0; i<selCnt; i++) {
 			var snode = sel.getRangeAt(i).cloneContents();
+			dump("[ENF]" + snode);
 			xmlStr += "<p>" + xmlSerializer.serializeToString(snode) + "</p>";
 		}
 		
@@ -190,27 +145,6 @@ var gsend_to_wunderlist = {
 		return true;
 	},
 	
-	forwardMsgsByFilterON: function(msgs) {
-		this.forwardMsgsByFilter(msgs, true);
-	},
-	
-	forwardMsgsByFilter: function(msgs, wunderlist) {
-		var req = {
-			account: null,
-			id: null,
-			noteInfo: null,
-			isGmailIMAP: false,
-			totalMsgs: 0
-		};
-		
-		if(!this.fillAccountInfo(msgs[0].folder.rootFolder.server, req, wunderlist)) return;
-		req.noteInfo = this.createNoteInfo(msgs, false, {date: "", enable: false}, wunderlist);
-		req.totalMsgs = req.noteInfo.length;
-		
-		this.registerRequest(req);
-		this.doNextRequest();
-	},
-	
 	forwardSelectedMsgsON: function(event, skey) {
 		this.forwardSelectedMsgs(event, false, skey, true);
 	},
@@ -226,20 +160,8 @@ var gsend_to_wunderlist = {
 			document.getElementById("statusText").setAttribute("label", "No messages are selected. Canceled.");
 			return;
 		}
-		//document.getElementById("statusText").setAttribute("label", "");
-		//if (!this.confirmENEmail()) return;
-		/*
-		if (this.locked) {
-			document.getElementById("statusText").setAttribute("label", "Please wait until current session is finished.");
-			return;
-		}
-		*/
 		
 		var remInfo = {date: "", enable: false};
-		if (reminder && !pressShift) {
-			window.openDialog("chrome://send_to_wunderlist/content/ENFReminder.xul", "send_to_wunderlist-reminder", "chrome,modal,dialog,centerscreen", remInfo);
-			if (!remInfo.enable) return;
-		}
 
 		var req = {
 			account: null,
@@ -250,9 +172,6 @@ var gsend_to_wunderlist = {
 			totalMsgs: 0
 		};
 
-		//var server = gFolderDisplay.displayedFolder.rootFolder.server;
-		//if(!this.fillAccountInfo(server, req, wunderlist)) return;
-		
 		req.noteInfo = this.createNoteInfo(gFolderDisplay.selectedMessages, pressShift, remInfo, wunderlist);
 		
 		req.totalMsgs = req.noteInfo.length;
@@ -260,21 +179,12 @@ var gsend_to_wunderlist = {
 			req.noteInfo[0].selection = this.selectionToHTML(); 
 		}
 
-		if (!wunderlist && nsPreferences.getBoolPref("extensions.send_to_wunderlist.show_conf_dialog", false)) {
-			window.openDialog("chrome://send_to_wunderlist/content/ENFConfirm.xul", "send_to_wunderlist-confirm", "chrome,modal,dialog,centerscreen", req.noteInfo);
-			req.totalMsgs = req.noteInfo.sendNum;
-			if (!req.noteInfo.sendNum) {
-				return;
-			}
-		}
-		
 		this.registerRequest(req);
 		this.doNextRequest();
 	},
 	
-	fillAccountInfo: function(server, req, wunderlist) {
-		var idPref = wunderlist ? nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.wunderlist.forward_id", "/")
-												 : nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.forward_id", "auto");
+	fillAccountInfo: function(server, req) {
+		var idPref = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.wunderlist.forward_id", "/")
 		req.accountName = server.prettyName ? server.prettyName : "";
 		if (idPref != "auto") {
 			var accAndId = idPref.split("/");
@@ -315,8 +225,6 @@ var gsend_to_wunderlist = {
 			return;
 		}
 		
-		//this.account = req.account;
-		//this.id = req.id;
 		this.isGmailIMAP = req.isGmailIMAP;
 		this.totalMsgs = req.totalMsgs;
 		this.sentMsgs = 0;
@@ -336,7 +244,7 @@ var gsend_to_wunderlist = {
 					var req = {};
 					//var server = gFolderDisplay.displayedFolder.rootFolder.server;
 					var server = info.msgHdr.folder.rootFolder.server;
-					if (this.fillAccountInfo(server, req, info.wunderlist)) { 
+					if (this.fillAccountInfo(server, req)) { 
 						this.account = req.account;
 						this.id = req.id;
 						this.forwardMsg(info);
@@ -525,133 +433,6 @@ var gsend_to_wunderlist = {
 		return [str, boundary];
 	},
 	
-	composeAsAttachment: function(info) {
-		var msgHdr = info.msgHdr;
-		var uri = msgHdr.folder.getUriForMsg(msgHdr);
-		var msgFile = this.createTempFile();
-
-		var messageService = messenger.messageServiceFromURI(uri);
-		var messageStream = Components.classes["@mozilla.org/network/sync-stream-listener;1"].
-		  createInstance().QueryInterface(Components.interfaces.nsIInputStream);
-		var inputStream = Components.classes["@mozilla.org/scriptableinputstream;1"].
-		  createInstance().QueryInterface(Components.interfaces.nsIScriptableInputStream);
-
-		var os = Components.classes['@mozilla.org/network/file-output-stream;1'].
-									createInstance(Components.interfaces.nsIFileOutputStream);
-		os.init(msgFile, 2, 0x200, false); // open as "write only"
-
-		var mailHdr = this.createHeaderString();
-		os.write(mailHdr[0], mailHdr[0].length);
-		
-		//Empty body
-		var bodyStr = "--" + mailHdr[1] + "\r\n" //boundary
-							+ "Content-Type: text/plain; charset=UTF-8\r\n"
-							+ "Content-Transfer-Encoding: 8bit\r\n\r\n";
-		os.write(bodyStr, bodyStr.length);
-
-		//Header text
-		if (nsPreferences.getBoolPref("extensions.send_to_wunderlist.add_header", false)) {
-			var escape = !nsPreferences.getBoolPref("extensions.send_to_wunderlist.header_use_html", false);
-			var hdrBodyStr = this.expandMetaCharacters(this.text2html(gsend_to_wunderlistUtils.loadFileToString("ENFHeader.txt"), escape),
-																																msgHdr, false, info.fwdAttachments, info.delAttachments, true, info.wunderlist);
-			if (hdrBodyStr.length > 0) {
-				var hdrStr = "--" + mailHdr[1] + "\r\n" //boundary
-										+ "Content-Type: text/html; charset=UTF-8;\r\n"
-										+ ' name="ENFHeader.html"' + "\r\n"
-										+ "Content-Transfer-Encoding: base64\r\n"
-										+ "Content-Disposition: attachment;\r\n"
-										+ ' filename="ENFHeader.html"' + "\r\n"
-										+ "\r\n";
-				os.write(hdrStr, hdrStr.length);
-				hdrBodyStr = this.utf8ToBase64(hdrBodyStr);
-				os.write(hdrBodyStr, hdrBodyStr.length);
-			}
-		}
-		
-		//Message to be forwarded
-		if (info.selection) {
-			var msgHdrStr = "\r\n" + "--" + mailHdr[1] + "\r\n" //boundary
-											+ "Content-Type: text/html; charset=UTF-8;\r\n"
-											+ ' name="ENFMessage.html"' + "\r\n"
-											+ "Content-Transfer-Encoding: base64\r\n"
-											+ "Content-Disposition: attachment;\r\n"
-											+ ' filename="ENFMessage.html"' + "\r\n"
-											+ "\r\n";
-			os.write(msgHdrStr, msgHdrStr.length);
-			var selStr = this.utf8ToBase64(info.selection);
-			os.write(selStr, selStr.length);
-		} else {
-			var msgHdrStr = "\r\n" + "--" + mailHdr[1] + "\r\n" //boundary
-											+ "Content-Type: message/rfc822;\r\n"
-											+ ' name="ENFMessage.eml"' + "\r\n"
-											+ "Content-Transfer-Encoding: 8bit\r\n"
-											+ "Content-Disposition: attachment;\r\n"
-											+ ' filename="ENFMessage.eml"' + "\r\n"
-											+ "\r\n";
-			os.write(msgHdrStr, msgHdrStr.length);
-			inputStream.init(messageStream);
-			messageService.streamMessage(uri, messageStream, msgWindow, null, false, null);
-			if (!inputStream.available()) {
-				messageStream.close();
-				inputStream.close();
-				os.close();
-				alert("Cannot load message file.");
-				return;
-			}
-	
-			this.initFilterAttachWS();
-	
-			//check delAttachments is empty or not
-			var filter = false;
-			var key = "";
-			for (key in info.delAttachments) {
-				filter = true;
-				break;
-			}
-			
-			while (inputStream.available()) {
-				var readData = inputStream.read(512);
-				//var writeData = filter ? this.filterAttachments(readData, info) : readData;
-				//if (writeData) os.write(writeData, writeData.length);
-				this.filterAndWrite(os, readData, info, filter);
-			}
-			
-			//flush
-			if (filter) {
-				//var writeData = this.filterAttachments("", info);
-				//if (writeData) os.write(writeData, writeData.length);
-				this.filterAndWrite(os, "", info, filter);
-			}
-			messageStream.close();
-			inputStream.close();
-		}
-
-		//Footer text
-		if (nsPreferences.getBoolPref("extensions.send_to_wunderlist.add_footer", false)) {
-			var escape = !nsPreferences.getBoolPref("extensions.send_to_wunderlist.footer_use_html", false);
-			var ftrBodyStr = this.expandMetaCharacters(this.text2html(gsend_to_wunderlistUtils.loadFileToString("ENFFooter.txt"), escape),
-																																msgHdr, false, info.fwdAttachments, info.delAttachments, true, info.wunderlist);
-			if (ftrBodyStr.length > 0) {
-				var ftrStr = "\r\n" + "--" + mailHdr[1] + "\r\n" //boundary
-										+ "Content-Type: text/html; charset=UTF-8;\r\n"
-										+ ' name="ENFFooter.html"' + "\r\n"
-										+ "Content-Transfer-Encoding: base64\r\n"
-										+ "Content-Disposition: attachment;\r\n"
-										+ ' filename="ENFFooter.html"' + "\r\n"
-										+ "\r\n";
-				os.write(ftrStr, ftrStr.length);
-				ftrBodyStr = this.utf8ToBase64(ftrBodyStr);
-				os.write(ftrBodyStr, ftrBodyStr.length);
-			}
-		}
-		
-		var endLine = "\r\n" + "--" + mailHdr[1] + "--\r\n";
-		os.write(endLine, endLine.length);
-		os.close();
-		
-		return msgFile;
-	},
-	
 	composeAsInline: function(info) {
 		var msgHdr = info.msgHdr;
 		var uri = msgHdr.folder.getUriForMsg(msgHdr);
@@ -807,13 +588,8 @@ var gsend_to_wunderlist = {
 		var msgHdr = info.msgHdr;
 		var msgFile = null;
 		var appName = info.wunderlist ? "wunderlist" : "Evernote";
-		if (!info.wunderlist && nsPreferences.getIntPref("extensions.send_to_wunderlist.forward_mode", 0) == 0) {
-			dump("[ENF] Forward by Attachment mode\n");
-			msgFile = this.composeAsAttachment(info);
-		} else {
-			dump("[ENF] Forward by Inline mode\n");
-			msgFile = this.composeAsInline(info);
-		}
+		dump("[ENF] Forward by Inline mode\n");
+		msgFile = this.composeAsInline(info);
 		
 		var previewMode = nsPreferences.getBoolPref("extensions.send_to_wunderlist.preview_mode", false);
 		this.msgSend = Components.classes["@mozilla.org/messengercompose/send;1"]
