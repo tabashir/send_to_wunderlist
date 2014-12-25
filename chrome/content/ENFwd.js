@@ -345,7 +345,7 @@ var gsend_to_wunderlist = {
 			this.msgCompFields.subject = this.encode(subject, 9, 72, null);
 			try {
 				//this.sendMsgFile(info);
-				this.listAttachmentsAndFwd(info);
+				this.stripAttachmentsAndFwd(info);
 			}catch(e){
 				dump(e);
 			}
@@ -973,15 +973,15 @@ var gsend_to_wunderlist = {
 		str = str.replace(/\%a/gm, authorName);
 		str = str.replace(/\%t/gm, toNames);
 		str = str.replace(/\%c/gm, ccNames);
-		
+
 		str = str.replace(/\%Y/gm, y);
 		str = str.replace(/\%M/gm, mon);
 		str = str.replace(/\%D/gm, d);
-		
+
 		str = str.replace(/\%h/gm, h);
 		str = str.replace(/\%m/gm, m);
 		str = str.replace(/\%s/gm, s);
-		
+
 		if (fwdAtts) {
 			var name = "";
 			var cols = 0;
@@ -1023,16 +1023,16 @@ var gsend_to_wunderlist = {
 			var attsStr = atts.join(", ");
 			str = str.replace(/\%R/gm, attsStr);
 		}
-		
+
 		if (isTitle) {
 			str = str.replace(/\@/g, "_");
 			str = str.replace(/\#/g, "_");
 			str = str.replace(/\s\!/g, "_");
 		}
-		
+
 		return str;
 	},
-	
+
 	createAddressNamesStr: function(listStr) {
 		if (!listStr) return "";
 		var addresses = {};
@@ -1040,7 +1040,7 @@ var gsend_to_wunderlist = {
 		var fullNames = {};
 		var count = {};
 		this.hdrParser.parseHeadersWithArray(listStr, addresses, names, fullNames, count);
-		
+
 		var len = addresses.value.length;
 		var nameList = [];
 		for (var i=0; i<len; i++) {
@@ -1050,10 +1050,10 @@ var gsend_to_wunderlist = {
 				nameList.push(addresses.value[i].split("@")[0]);
 			}
 		}
-		
+
 		return nameList.join(", ");
 	},
-	
+
 	createTempFile: function() {
 		var tmpDir = this.dirService.get("TmpD", Components.interfaces.nsIFile);
 		tmpDir.append("send_to_wunderlist");
@@ -1061,12 +1061,12 @@ var gsend_to_wunderlist = {
 		tmpDir.createUnique(Components.interfaces.nsIFile.NORMAL_FILE_TYPE, 0666);
 		return tmpDir;
 	},
-	
+
 	abortForward: function() {
 		this.totalMsgs = 0;
 		this.sentMsgs = 0;
 		this.noteInfo = [];
-		
+
 		var locked = this.locked;
 		this.locked = false;
 		this.changePopupMenuState();
@@ -1078,7 +1078,7 @@ var gsend_to_wunderlist = {
 
 		document.getElementById("statusText").setAttribute("label", "Forwarding was aborted.");
 	},
-	
+
 	changePopupMenuState: function() {
 		if (this.locked) {
 			document.getElementById("ENFwd:FwdMenu").setAttribute("collapsed", true);
@@ -1088,7 +1088,7 @@ var gsend_to_wunderlist = {
 			document.getElementById("ENFwd:CancelMenu").setAttribute("collapsed", true);
 		}
 	},
-	
+
 	utf8ToBase64: function(str) {
 		var b64 = window.btoa(unescape(encodeURIComponent(str)));
 		var ret = "";
@@ -1097,17 +1097,17 @@ var gsend_to_wunderlist = {
 		for (; start + 76 < len; start += 76) {
 			ret += b64.substr(start, 76) + "\r\n";
 		}
-		
+
 		if (start < len) ret += b64.substr(start) + "\r\n";
-		
+
 		return ret;
 	},
-	
+
 	base64ToUtf8: function(str) {
 		return decodeURIComponent(escape(window.atob(str)));
 	},
-	
-	listAttachmentsAndFwd: function(info) {
+
+	stripAttachmentsAndFwd: function(info) {
 		var msgHdr = info.msgHdr;
 		if (!(msgHdr.flags & Components.interfaces.nsMsgMessageFlags.Attachment)) {
 			this.sendMsgFile(info);
@@ -1119,85 +1119,18 @@ var gsend_to_wunderlist = {
 				var delAttachments = [];
 				var fwdAttachments = [];
 				var app = info.wunderlist ? "wunderlist." : ""
-				var fwdMode = nsPreferences.getIntPref("extensions.send_to_wunderlist." + app + "attachments_forward_mode", 0);
-				
-				if (fwdMode == 1) {//remove all
-					for (var i=0; i<atts.length; i++) {
-						var att = atts[i];
-						delAttachments[att.name] = {size: att.size, del: true};
-					}
-				} else if (fwdMode == 0 || fwdMode == 2) { //foward all or ask
-					for (var i=0; i<atts.length; i++) {
-						//filters out "Part 1.2"-like / deleted attachments.
-						var att = atts[i];
-						if (!att.isRealAttachment || att.contentType == ("text/x-moz-deleted") || att.url.indexOf("file://") == 0) {
-							delAttachments[att.name] = {size: att.size, del: true};
-						} else {
-							fwdAttachments[att.name] = {size: att.size, del: false};
-						}
-					}
-				} else if (fwdMode == 3 || fwdMode == 4) { //filter
-					var extFilter = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist." + app + "attachments_ext_filter", "");
-					extFilter = extFilter.split(/,\s*/);
-					var sizeFilter = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist." + app + "attachments_size_filter", "0");
-					for (var i=0; i<atts.length; i++) {
-						var att = atts[i];
-						//var del = fwdMode == 3 ? extFilter.indexOf(att.name.split(".").pop()) > -1 || (sizeFilter > 0 && sizeFilter * 1024 * 1024 <= att.size)
-						//											 : extFilter.indexOf(att.name.split(".").pop()) > -1 && (sizeFilter > 0 && sizeFilter * 1024 * 1024 <= att.size);
-						var del = false;
-						if (!att.isRealAttachment || att.contentType == ("text/x-moz-deleted") || att.url.indexOf("file://") == 0) {
-							del = true;
-						} else if (fwdMode == 3) {
-							del = extFilter.indexOf(att.name.split(".").pop()) > -1 || (sizeFilter > 0 && sizeFilter * 1024 * 1024 <= att.size);
-						} else if (fwdMode == 4) {
-							del = extFilter.indexOf(att.name.split(".").pop()) > -1 && (sizeFilter > 0 && sizeFilter * 1024 * 1024 <= att.size);
-						}
-						
-						if (del) {
-							delAttachments[att.name] = {size: att.size, del: true};
-						} else {
-							fwdAttachments[att.name] = {size: att.size, del: false};
-						}
-					}
+
+				for (var i=0; i<atts.length; i++) {
+					var att = atts[i];
+					delAttachments[att.name] = {size: att.size, del: true};
 				}
-				
-				if (fwdMode == 2) {
-					var callback = {attachments: fwdAttachments, canceled: false};
-					//check fwdAttachments is empty or not
-					var confirm = false;
-					var key = "";
-					for (key in fwdAttachments) {
-						confirm = true;
-						break;
-					}
-					
-					if (confirm) {
-						window.openDialog("chrome://send_to_wunderlist/content/ENFDelAttach.xul", "send_to_wunderlist-delattach", "chrome,modal,dialog,centerscreen", callback);
-					}
-	
-					if (callback.canceled) {
-						that.abortForward();
-					} else {
-						var name = "";
-						for (name in callback.attachments){
-							var att = callback.attachments[name];
-							if (att.del) {
-								delAttachments[name] = att;
-								delete fwdAttachments[name];
-							}
-						}
-						info.delAttachments = delAttachments;
-						info.fwdAttachments = fwdAttachments;
-						that.sendMsgFile(info);
-					}
-				} else {
-					info.delAttachments = delAttachments;
-					info.fwdAttachments = fwdAttachments;
-					that.sendMsgFile(info);
-				}
-			};
-			MsgHdrToMimeMessage(msgHdr,null,mimeCallback);
-		}
+
+				info.delAttachments = delAttachments;
+				info.fwdAttachments = fwdAttachments;
+				that.sendMsgFile(info);
+			}
+		};
+		MsgHdrToMimeMessage(msgHdr,null,mimeCallback);
 	}
 };
 
