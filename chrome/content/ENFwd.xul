@@ -14,55 +14,38 @@
   </broadcasterset>
   
   <keyset id="mailKeys">
-	<!-- For Evernote -->
-    <key id="ENF:key_FwdMsgs" disabled="false"
-	  oncommand="gsend_to_wunderlist.forwardSelectedMsgs(event, false, true)"/>
-    <key id="ENF:key_FwdMsgsRem" disabled="false"
-	  oncommand="gsend_to_wunderlist.forwardSelectedMsgs(event, true, true)"/>
  	<!-- For wunderlist -->
-    <key id="ENF:key_FwdMsgsON" disabled="false"
-	  oncommand="gsend_to_wunderlist.forwardSelectedMsgsON(event, true)"/>
+    <key id="ENF:key_FwdMsgsWunderList" disabled="false"
+	  oncommand="gsend_to_wunderlist.forwardSelectedMsgsWunderList(event, true)"/>
   </keyset>
   
   <popup id="mailContext">
-    <menuitem id="ENFwd_mailContext-forward_to_on" insertafter="mailContext-forwardAsMenu,mailContext-forward"
+    <menuitem id="ENFwd_mailContext-forward_to_wunderlist" insertafter="mailContext-forwardAsMenu,mailContext-forward"
     					observes="ENFwd:FwdMenu"
-    					label="Forward to wunderlist" oncommand="gsend_to_wunderlist.forwardSelectedMsgsON(event)" />
-    <menuitem id="ENFwd_mailContext-forward_to_on_and_archive" insertafter="ENFwd_mailContext-forward_to_on"
+    					label="Forward to wunderlist" oncommand="gsend_to_wunderlist.forwardSelectedMsgsWunderList(event)" />
+    <menuitem id="ENFwd_mailContext-forward_to_wunderlist_and_archive" insertafter="ENFwd_mailContext-forward_to_wunderlist"
     					observes="ENFwd:FwdMenu"
-    					label="Forward to wunderlist and Archive" oncommand="gsend_to_wunderlist.forwardSelectedMsgsON(event)" />
+    					label="Forward to wunderlist and Archive" oncommand="gsend_to_wunderlist.forwardSelectedMsgsWunderList(event)" />
   </popup>
 
 	<menupopup id="button-ForwardPopup">
 		<menuseparator/>
-		<menuitem id="ENFwd_button-forward_to_en"
+		<menuitem id="ENFwd_button-forward_to_wunderlist"
 							observes="ENFwd:FwdMenu"
-							label="Forward to Evernote" oncommand="gsend_to_wunderlist.forwardSelectedMsgs(event, false)" />
-		<menuitem id="ENFwd_button-forward_to_en_rem"
-							observes="ENFwd:FwdMenu"
-							label="Forward to Evernote with Reminder" oncommand="gsend_to_wunderlist.forwardSelectedMsgs(event, true)" />
-		<menuitem id="ENFwd_button-forward_to_on"
-							observes="ENFwd:FwdMenu"
-							label="Forward to wunderlist" oncommand="gsend_to_wunderlist.forwardSelectedMsgsON(event)" />
-	  <menuitem id="ENFwd_button-forward_cancel" insertafter="ENFwd_button-forward_to_en_on"
+							label="Forward to wunderlist" oncommand="gsend_to_wunderlist.forwardSelectedMsgsWunderList(event)" />
+	  <menuitem id="ENFwd_button-forward_cancel" insertafter="ENFwd_button-forward_to_en_wunderlist"
 	  					observes="ENFwd:CancelMenu"
-	  					label="Abort Fowarding to Evernote" oncommand="gsend_to_wunderlist.abortForward()" />
+	  					label="Abort Forward to wunderlist" oncommand="gsend_to_wunderlist.abortForward()" />
 	</menupopup>
 
 	<menupopup id="hdrForwardDropdown">
 		<menuseparator/>
-		<menuitem id="ENFwd_hdrbutton-forward_to_en"
+		<menuitem id="ENFwd_hdrbutton-forward_to_wunderlist"
 							observes="ENFwd:FwdMenu"
-							label="Forward to Evernote" oncommand="gsend_to_wunderlist.forwardSelectedMsgs(event, false)" />
-		<menuitem id="ENFwd_hdrbutton-forward_to_en_rem"
-							observes="ENFwd:FwdMenu"
-							label="Forward to Evernote with Reminder" oncommand="gsend_to_wunderlist.forwardSelectedMsgs(event, true)" />
-		<menuitem id="ENFwd_hdrbutton-forward_to_on"
-							observes="ENFwd:FwdMenu"
-							label="Forward to wunderlist" oncommand="gsend_to_wunderlist.forwardSelectedMsgsON(event)" />
-  	<menuitem id="ENFwd_hdrbutton-forward_cancel" insertafter="ENFwd_hdrbutton-forward_to_en_on"
+							label="Forward to wunderlist" oncommand="gsend_to_wunderlist.forwardSelectedMsgsWunderList(event)" />
+  	<menuitem id="ENFwd_hdrbutton-forward_cancel" insertafter="ENFwd_hdrbutton-forward_to_wunderlist"
   						observes="ENFwd:CancelMenu"
-  						label="Abort Fowarding to Evernote" oncommand="gsend_to_wunderlist.abortForward()" />
+  						label="Abort Forward to wunderlist" oncommand="gsend_to_wunderlist.abortForward()" />
 	</menupopup>
 
 </overlay>

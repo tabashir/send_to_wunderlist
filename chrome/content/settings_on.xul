@@ -6,7 +6,7 @@
 
 <overlay id="send_to_wunderlist-onsettings-overlay"
 	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
-	<prefpane id="ONPref" label="wunderlist" flex="1" onpaneload="gSTWSettings.onLoad();">
+	<prefpane id="WunderListPref" label="wunderlist" flex="1" onpaneload="gSTWSettings.onLoad();">
 		<preferences>
 			<preference id="pref_wunderlist.email" name="extensions.send_to_wunderlist.wunderlist.email" type="unichar"/>
 			<preference id="pref_wunderlist.forward_id" name="extensions.send_to_wunderlist.wunderlist.forward_id" type="unichar"/>

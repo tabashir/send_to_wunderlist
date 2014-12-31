@@ -51,12 +51,12 @@ var gsend_to_wunderlist = {
 	
 	setShortcutKey: function(rem, wunderlist) {
 		var prefix = rem ? "rem_" : "";
-		var app = wunderlist ? "wunderlist." : "";
+		var app = "wunderlist.";
 		var keyElem = null;
 		if (rem) {
-			keyElem = wunderlist ? document.getElementById("ENF:key_FwdMsgsRemON") : document.getElementById("ENF:key_FwdMsgsRem");
+			keyElem = wunderlist ? document.getElementById("ENF:key_FwdMsgsRemWunderList") : document.getElementById("ENF:key_FwdMsgsRem");
 		} else {
-			keyElem = wunderlist ? document.getElementById("ENF:key_FwdMsgsON") : document.getElementById("ENF:key_FwdMsgs");
+			keyElem = wunderlist ? document.getElementById("ENF:key_FwdMsgsWunderList") : document.getElementById("ENF:key_FwdMsgs");
 		}
 
 		if (!nsPreferences.getBoolPref("extensions.send_to_wunderlist." + app + prefix + "enable_skey", false)) {
@@ -145,7 +145,7 @@ var gsend_to_wunderlist = {
 		return true;
 	},
 	
-	forwardSelectedMsgsON: function(event, skey) {
+	forwardSelectedMsgsWunderList: function(event, skey) {
 		this.forwardSelectedMsgs(event, false, skey, true);
 	},
 	
