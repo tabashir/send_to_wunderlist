@@ -13,12 +13,11 @@
 		<tabbox>
 		<tabs>
 		  <tab id="comtab" label="Common"/>
-		  <tab id="entab" label="Evernote"/>
 		</tabs>
 		<tabpanels>
 			<!-- Common -->
 			<tabpanel orient="vertical">
-				<label value="- Following meta characters are available for note title, notebook, tags and memo:"/>
+				<label value="- Following meta characters are available:"/>
 				<grid>
 					<columns>
 						<column/>
@@ -78,21 +77,11 @@
 						</row>
 						<row>
 							<spacer style="width:2.0em;"/>
-							<label value="%R"/>
-							<label value="Removed attachments"/>
-							<label value="%r"/>
-							<label value="Forwarded attachments"/>
+							<label value="%L"/>
+							<label value="Insert Thunderlink"/>
 						</row>
 					</rows>
 				</grid>
-				<hbox>
-					<spacer style="width:1.0em;"/>
-					<vbox>
-						<label value='NOTE: @, # and ! in title, notebook and tags are replaced by _.'/>
-						<label value='NOTE: %R and %r are only available in memo.'/>
-					</vbox>
-				</hbox>
-
 				<spacer style="height:1.0em;"/>
 				<label value="- Preview mode: In this mode, a note is not sent but saved in the Unsent folder."/>
 				<hbox>
@@ -100,20 +89,7 @@
 					<checkbox id="ENFPreviewMode" label="Enable Preview mode" checked="false" preference="PrefPreviewMode"/>
 				</hbox>
 			</tabpanel>
-			
-			<!-- Evernote -->
-			<tabpanel orient="vertical">
-				<label value="- By forwarding notes with shift key, they will be merged into the most recent note"/>
-				<label value="  with the same title in Evernote."/>
-				<label value="  Notebook, tags and reminder settings are ignored in this case."/>
-				
-				<spacer style="height:1.0em;"/>
-				<label value="- Use Inline mode in the General tab if your SMTP server does not allow eml or html attachments."/>
-				<label value="  But please note Inline mode has the following limitations:"/>
-				<label value="  * Memo settings are ignored"/>
-				<label value="  * Always forward whole message; cannot send only selected text"/>
-	
-			</tabpanel>
+
 		</tabpanels>
 		</tabbox>
 	</prefpane>
