@@ -130,26 +130,18 @@ var gsend_to_wunderlist = {
 		return ret;
 	},
 	
-//	confirmENEmail: function() {
-//		this.email = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.email", "");
-//		if (!this.email) {
-//			alert("Please input your Wunderlist email address in send_to_wunderlist settings.");
-//			window.openDialog("chrome://send_to_wunderlist/content/settings.xul", "send_to_wunderlist-settings", "chrome,modal,dialog,centerscreen");
-//			this.email = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.email", "");
-//			if (!this.email) {
-//				document.getElementById("statusText").setAttribute("label", "No Wunderlist email address. Canceled.");
-//				return false;
-//			}
-//		}
-//		
-//		return true;
-//	},
-	
 	forwardSelectedMsgsWunderList: function(event, skey) {
+		this.forwardSelectedMsgs(event, false, skey, false);
+	},
+	
+	forwardSelectedMsgsWunderListAndArchive: function(event, skey) {
 		this.forwardSelectedMsgs(event, false, skey, true);
 	},
 	
-	forwardSelectedMsgs: function(event, reminder, skey, wunderlist) {
+	
+	forwardSelectedMsgs: function(event, reminder, skey, archiveIt) {
+		var wunderlist = true;
+
 		var pressShift = false;
 		if (event) {
 			event.stopPropagation();
@@ -264,18 +256,9 @@ var gsend_to_wunderlist = {
 		}
 	},
 	
-	createNoteInfo: function(selectedMsgs, append, reminder, wunderlist) {
+	createNoteInfo: function(selectedMsgs, append, reminder) {
 		var noteInfo = [];
-//		var titlePref = wunderlist ? nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.wunderlist.title", "%S")
-//													  : nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.title", "%S");
-//		var notebookPref = wunderlist ? ""
-//															 : nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.notebook", "");
-//		var defaultTagsPref = wunderlist ? ""
-//																	: nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.tags", "");
-//		if (!wunderlist && nsPreferences.getBoolPref("extensions.send_to_wunderlist.use_folder_name", false)) {//old pref
-//			notebookPref = "%F";
-//		}
-		
+		var wunderlist = true;
 		var titlePref = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.wunderlist.title", "%S");
 		var notebookPref = "";
 		var defaultTagsPref = "";
@@ -325,7 +308,7 @@ var gsend_to_wunderlist = {
 	forwardMsg: function(info) {
 		var msgHdr = info.msgHdr;
 		
-		if (info.wunderlist || gsend_to_wunderlistUtils.checkLimitExpires() || gsend_to_wunderlistUtils.checkSentTimes()) {
+		if (info.wunderlist) {
 			this.msgCompFields = Components.classes["@mozilla.org/messengercompose/composefields;1"]
 				.createInstance(Components.interfaces.nsIMsgCompFields);
 			this.msgCompFields.from = this.id.email;
@@ -403,14 +386,7 @@ var gsend_to_wunderlist = {
 	
 	saveSentDone: function() {
 		var sent = 0;
-		if (gsend_to_wunderlistUtils.checkLimitExpires(true)) {
-			sent = 1;
-			var date = gsend_to_wunderlistUtils.localDateToEnDate(new Date());
-			var today = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate();
-			nsPreferences.setUnicharPref("extensions.send_to_wunderlist.sent_date", today);
-		} else {
-			sent = nsPreferences.getIntPref("extensions.send_to_wunderlist.sent_times", 0) + 1;
-		}
+		sent = nsPreferences.getIntPref("extensions.send_to_wunderlist.sent_times", 0) + 1;
 		nsPreferences.setIntPref("extensions.send_to_wunderlist.sent_times", sent);
 	},
 	
@@ -607,7 +583,6 @@ var gsend_to_wunderlist = {
 		var sendListener = {
 			QueryInterface: function(iid) {
     		if (iid.equals(Components.interfaces.nsIMsgSendListener) ||
-    		    //iid.equals(Components.interfaces.nsIWebProgressListener) ||
         		iid.equals(Components.interfaces.nsISupportsWeakReference) ||
         		iid.equals(Components.interfaces.nsISupports)) return this;
     		else throw Components.results.NS_NOINTERFACE;
@@ -615,14 +590,6 @@ var gsend_to_wunderlist = {
 			onStartSending: function(aMsgID, aMsgSize) {
 				that.sentMsgs += 1;
 				document.getElementById("statusText").setAttribute("label", "Sending note to "+ appName + " ... " + "["+that.sentMsgs+"/"+that.totalMsgs+"]");
-				/*
-				this.statusInterval = setInterval(
-					function() {
-						document.getElementById("statusText").setAttribute("label", "Sending note to Evernote ... "+"["+that.sentMsgs+"/"+that.totalMsgs+"]");
-					},
-					1000
-				);
-				*/
 			},
 			
 			onProgress: function(aMsgID, aProgress, aProgressMax) {
@@ -640,9 +607,6 @@ var gsend_to_wunderlist = {
 					if (!info.wunderlist) that.saveSentDone();
 					var markFwdPref = info.wunderlist ? "extensions.send_to_wunderlist.wunderlist.mark_as_forwarded" : "extensions.send_to_wunderlist.mark_as_forwarded"
 					if (nsPreferences.getBoolPref(markFwdPref, true)) {
-						//var msgKey = msgHdr.messageKey;
-						//var newHdr = msgHdr.folder.GetMessageHeader(msgKey);
-						//newHdr.flags = newHdr.flags | Components.interfaces.nsMsgMessageFlags.Forwarded;
 						msgHdr.flags = msgHdr.flags | Components.interfaces.nsMsgMessageFlags.Forwarded;
 					}
 				}
@@ -726,34 +690,28 @@ var gsend_to_wunderlist = {
  										? this.msgSend.nsMsgQueueForLater
  										: this.msgSend.nsMsgDeliverNow;
  										
-		if (!gsend_to_wunderlistUtils.checkMsgSize(msgFile)) { //file size error
-			this.sentMsgs += 1;
-			alert("Note size exceeds the limit. Canceled.");
-			sendListener.onStopSending(null, "FILESIZE_ERROR", "", null);
-		} else {
-			this.locked = true;
-			this.changePopupMenuState();
-			
-			this.msgSend.sendMessageFile(
-				 this.id,                // in nsIMsgIdentity       aUserIdentity,
-				 this.account.key,          // char* accountKey,
-				 //id.key,          // char* accountKey,
-				 this.msgCompFields,                   // in nsIMsgCompFields     fields,
-				 msgFile,                        // in nsIFile          sendIFile,
-				 false,                            // in PRBool               deleteSendFileOnCompletion,
-				 false,                           // in PRBool               digest_p,
+		this.locked = true;
+		this.changePopupMenuState();
+		
+		this.msgSend.sendMessageFile(
+			 this.id,                // in nsIMsgIdentity       aUserIdentity,
+			 this.account.key,          // char* accountKey,
+			 //id.key,          // char* accountKey,
+			 this.msgCompFields,                   // in nsIMsgCompFields     fields,
+			 msgFile,                        // in nsIFile          sendIFile,
+			 false,                            // in PRBool               deleteSendFileOnCompletion,
+			 false,                           // in PRBool               digest_p,
 //				 this.msgSend.nsMsgDeliverNow,         // in nsMsgDeliverMode     mode,
- 				 deliverMode,         // in nsMsgDeliverMode     mode,
-				 null,                            // in nsIMsgDBHdr          msgToReplace,
-				 sendListener,     // in nsIMsgSendListener   aListener,
-				 feedback,   // in nsIMsgStatusFeedback aStatusFeedback,
-				 ""                             // in string               password
-			);
-			
-			if (previewMode) {
-				sendListener.onStartSending(null, 0);
-				sendListener.onStopSending(null, 0, null, null);
-			}
+			 deliverMode,         // in nsMsgDeliverMode     mode,
+			 null,                            // in nsIMsgDBHdr          msgToReplace,
+			 sendListener,     // in nsIMsgSendListener   aListener,
+			 feedback,   // in nsIMsgStatusFeedback aStatusFeedback,
+			 ""                             // in string               password
+		);
+		
+		if (previewMode) {
+			sendListener.onStartSending(null, 0);
+			sendListener.onStopSending(null, 0, null, null);
 		}
 	},
 	

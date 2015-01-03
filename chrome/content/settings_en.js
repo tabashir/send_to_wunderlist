@@ -120,8 +120,6 @@ var gENFSettings = {
 			}
 		}
 		
-		this.onChangeAccountType();
-		//this.onToggleUseFolderName(document.getElementById("ENFUseFolderName"));
 		if (nsPreferences.getBoolPref("extensions.send_to_wunderlist.use_folder_name", false)) {//convert old pref
 			document.getElementById(this.prefix+"Notebook").setAttribute("value", "%F");
 			nsPreferences.setBoolPref("extensions.send_to_wunderlist.use_folder_name", false);
@@ -135,25 +133,6 @@ var gENFSettings = {
 		document.getElementById(this.prefix+"FooterText").value = this.loadFileToString(this.prefix+"Footer.txt");	
 	},
 	
-	onChangeAccountType: function() {
-		var accType = document.getElementById(this.prefix+"AccType").getAttribute("value");
-		var maxSize = gsend_to_wunderlistUtils.getMaxSize(accType);
-		var maxSend = gsend_to_wunderlistUtils.getMaxSend(accType);
-		var todaySent = gsend_to_wunderlistUtils.checkLimitExpires(true) ? 0 : nsPreferences.getIntPref("extensions.send_to_wunderlist.sent_times", 0);
-		
-		document.getElementById(this.prefix+"NoteSize").setAttribute("value", maxSize);
-		document.getElementById(this.prefix+"SentNotes").setAttribute("value", todaySent+"/"+maxSend);
-		var progress = (todaySent * 100) / maxSend;
-		if (progress > 100) progress = 100;
-		document.getElementById(this.prefix+"SentNotesMeter").setAttribute("value", progress);
-	},
-/*	
-	onToggleUseFolderName: function(targ) {
-		var notebookNameField = document.getElementById("ENFNotebook");
-		if (targ.checked) notebookNameField.setAttribute("disabled", true);
-		else notebookNameField.removeAttribute("disabled");
-	},
-*/	
 	editTagList: function(event) {
 		var tags = event.target.value;
 		var tagsArray = tags == "" ? [] : tags.split(" ");
@@ -333,7 +312,6 @@ var gENFSettings = {
 				var item = document.createElement("menuitem");
 				item.className = "identity-popup-item";
 				item.setAttribute("label", identity.identityName);
-				//item.setAttribute("value", identity.key);
 				item.setAttribute("value", account.key+"/"+identity.key);
 				item.setAttribute("accountkey", account.key);
 				item.setAttribute("accountname", " - " + server.prettyName);
