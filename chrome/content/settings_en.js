@@ -9,58 +9,7 @@ var gENFSettings = {
 	prefix: "",
 	elementIDs: [],
 	
-	init: function() {
-		this.prefix = "ENF";
-		this.elementIDs = [
-/*
-		"Email",
-			"FwdMode",
-*/
-			"IdList",
-/*
-			"SaveInSent",
-			"SendInterval",
-			"NoteTitle",
-			"RmReFwd",
-			"RmMLTag",
-			"Notebook",
-			"NoteTags",
-			"MsgTags",
-*/
-			"EnTags",
-/*
-			"Header",
-			"Footer",
-			"HeaderHTML",
-			"FooterHTML",
-			"MemoMailLink",
-			"MarkAsForward",
-			"ShowConfirm",
-			"AccType",
-			"AlertLimit",
-			"AttFwdMode",
-			"AttExtFilter",
-			"AttSizeFilter",
-			"SkeyEnable",
-*/
-			"Skey",
-/*
-			"SkeyAlt",
-			"SkeyCtrl",
-			"SkeyMeta",
-			"RemSkeyEnable",
-*/
-			"RemSkey"
-/*
-			"RemSkeyAlt",
-			"RemSkeyCtrl",
-			"RemSkeyMeta"
-*/
-		];
-
-		window.addEventListener("dialogaccept",function(){gENFSettings.savePrefs();});
-		window.addEventListener("dialogcancel",function(){gENFSettings.cancelPrefs();});
-	},
+	init: function() {},
 	
 	savePrefs: function() {
 		if (!this.closeDlg){
