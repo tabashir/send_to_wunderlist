@@ -130,20 +130,20 @@ var gsend_to_wunderlist = {
 		return ret;
 	},
 	
-	confirmENEmail: function() {
-		this.email = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.email", "");
-		if (!this.email) {
-			alert("Please input your Evernote email address in send_to_wunderlist settings.");
-			window.openDialog("chrome://send_to_wunderlist/content/settings.xul", "send_to_wunderlist-settings", "chrome,modal,dialog,centerscreen");
-			this.email = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.email", "");
-			if (!this.email) {
-				document.getElementById("statusText").setAttribute("label", "No Evernote email address. Canceled.");
-				return false;
-			}
-		}
-		
-		return true;
-	},
+//	confirmENEmail: function() {
+//		this.email = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.email", "");
+//		if (!this.email) {
+//			alert("Please input your Wunderlist email address in send_to_wunderlist settings.");
+//			window.openDialog("chrome://send_to_wunderlist/content/settings.xul", "send_to_wunderlist-settings", "chrome,modal,dialog,centerscreen");
+//			this.email = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.email", "");
+//			if (!this.email) {
+//				document.getElementById("statusText").setAttribute("label", "No Wunderlist email address. Canceled.");
+//				return false;
+//			}
+//		}
+//		
+//		return true;
+//	},
 	
 	forwardSelectedMsgsWunderList: function(event, skey) {
 		this.forwardSelectedMsgs(event, false, skey, true);
@@ -220,9 +220,9 @@ var gsend_to_wunderlist = {
 		
 		if (req.wunderlist) {
 			this.email = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.wunderlist.email", "me@wunderlist.com");
-		} else if (!this.confirmENEmail()) {
-			this.emptyQueue();
-			return;
+//		} else if (!this.confirmENEmail()) {
+//			this.emptyQueue();
+//			return;
 		}
 		
 		this.isGmailIMAP = req.isGmailIMAP;
@@ -266,21 +266,29 @@ var gsend_to_wunderlist = {
 	
 	createNoteInfo: function(selectedMsgs, append, reminder, wunderlist) {
 		var noteInfo = [];
-		var titlePref = wunderlist ? nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.wunderlist.title", "%S")
-													  : nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.title", "%S");
-		var notebookPref = wunderlist ? ""
-															 : nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.notebook", "");
-		var defaultTagsPref = wunderlist ? ""
-																	: nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.tags", "");
-		if (!wunderlist && nsPreferences.getBoolPref("extensions.send_to_wunderlist.use_folder_name", false)) {//old pref
-			notebookPref = "%F";
-		}
+//		var titlePref = wunderlist ? nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.wunderlist.title", "%S")
+//													  : nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.title", "%S");
+//		var notebookPref = wunderlist ? ""
+//															 : nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.notebook", "");
+//		var defaultTagsPref = wunderlist ? ""
+//																	: nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.tags", "");
+//		if (!wunderlist && nsPreferences.getBoolPref("extensions.send_to_wunderlist.use_folder_name", false)) {//old pref
+//			notebookPref = "%F";
+//		}
+		
+		var titlePref = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.wunderlist.title", "%S");
+		var notebookPref = "";
+		var defaultTagsPref = "";
+
 		var len = selectedMsgs.length;
+
 		for (var i=0; i<len; i++) {
 			var msgHdr = selectedMsgs[i];
 			var defaultTags = "";
-			var tags = !wunderlist && nsPreferences.getBoolPref("extensions.send_to_wunderlist.add_msg_tags", false) ? this.getTagsForMsg(msgHdr) : [];
+//			var tags = !wunderlist && nsPreferences.getBoolPref("extensions.send_to_wunderlist.add_msg_tags", false) ? this.getTagsForMsg(msgHdr) : [];
+			var tags = [];
 			if (defaultTagsPref) {
+
 				defaultTags = this.expandMetaCharacters(defaultTagsPref, msgHdr, true, wunderlist);
 				tags = tags.concat(defaultTags.split(/\s*,\s*/));
 			}
@@ -860,7 +868,12 @@ var gsend_to_wunderlist = {
 		return ret;
 	},
 	
+	getThunderLink: function(message) {
+		return "thunderlink://" + "messageid=" + message.messageId;
+	},
+
 	createAddressesString: function(addrsStr, fullName, provideLink, wrap) {
+
 		var addrs = [];
 		var addresses = {};
 		var names = {};
@@ -887,11 +900,11 @@ var gsend_to_wunderlist = {
 					cols = cols + name.length + 2; //2 means , and space
 				}
 				
-				if (provideLink) {
-					addrs.push(htmlBR + '<a href="' + 'mailto:' + addrVal + '">' + this.escapeHTMLMetaCharacter(name) + '</a>');
-				} else {
+//				if (provideLink) {
+//					addrs.push(htmlBR + '<a href="' + 'mailto:' + addrVal + '">' + this.escapeHTMLMetaCharacter(name) + '</a>');
+//				} else {
 					addrs.push(htmlBR + name);
-				}
+//				}
 			}
 		}
 		return addrs.join(", ");
@@ -916,7 +929,10 @@ var gsend_to_wunderlist = {
 				sub = "Re: " + sub;
 			}
 		}
-		var provideLink = !wunderlist && !isTitle && nsPreferences.getBoolPref("extensions.send_to_wunderlist.mailto_link", false);
+//		var provideLink = !wunderlist && !isTitle && nsPreferences.getBoolPref("extensions.send_to_wunderlist.mailto_link", false);
+		var provideLink = false;
+		
+		
 		var author = this.createAddressesString(msgHdr.mime2DecodedAuthor, true, provideLink, false);
 		//var authorName = this.hdrParser.extractHeaderAddressName(author);
 		//if (authorName.indexOf("@")) authorName = authorName.split("@")[0]; //only email address. use account name to avoid conflict with notebook
@@ -981,6 +997,8 @@ var gsend_to_wunderlist = {
 		str = str.replace(/\%h/gm, h);
 		str = str.replace(/\%m/gm, m);
 		str = str.replace(/\%s/gm, s);
+		
+		str = str.replace(/\%L/gm, this.getThunderLink(msgHdr));
 
 		if (fwdAtts) {
 			var name = "";
@@ -1022,12 +1040,6 @@ var gsend_to_wunderlist = {
 			}
 			var attsStr = atts.join(", ");
 			str = str.replace(/\%R/gm, attsStr);
-		}
-
-		if (isTitle) {
-			str = str.replace(/\@/g, "_");
-			str = str.replace(/\#/g, "_");
-			str = str.replace(/\s\!/g, "_");
 		}
 
 		return str;
