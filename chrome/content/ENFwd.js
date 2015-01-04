@@ -59,27 +59,27 @@ var gsend_to_wunderlist = {
 			keyElem = wunderlist ? document.getElementById("ENF:key_FwdMsgsWunderList") : document.getElementById("ENF:key_FwdMsgs");
 		}
 
-		if (!nsPreferences.getBoolPref("extensions.send_to_wunderlist." + app + prefix + "enable_skey", false)) {
+		if (!nsPreferences.getBoolPref("extensions.send_to_wunderlist." + prefix + "enable_skey", false)) {
 			keyElem.setAttribute("disabled", true);
 			return;
 		}
 
-		var skey = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist." + app + prefix + "skey", "");
+		var skey = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist." + prefix + "skey", "");
 		if (!skey) {
 			keyElem.setAttribute("disabled", true);
 			return;
 		}
 
 		var modifiers = [];
-		if (nsPreferences.getBoolPref("extensions.send_to_wunderlist." + app + prefix + "skey_ctrl", false)) {
+		if (nsPreferences.getBoolPref("extensions.send_to_wunderlist." + prefix + "skey_ctrl", false)) {
 			modifiers.push("control");
 		}
 
-		if (nsPreferences.getBoolPref("extensions.send_to_wunderlist." + app + prefix + "skey_alt", false)) {
+		if (nsPreferences.getBoolPref("extensions.send_to_wunderlist." + prefix + "skey_alt", false)) {
 			modifiers.push("alt");
 		}
 
-		if (nsPreferences.getBoolPref("extensions.send_to_wunderlist." + app + prefix + "skey_meta", false)) {
+		if (nsPreferences.getBoolPref("extensions.send_to_wunderlist." + prefix + "skey_meta", false)) {
 			modifiers.push("meta");
 		}
 
@@ -145,7 +145,7 @@ var gsend_to_wunderlist = {
 	},
 	
 	fillAccountInfo: function(server, req) {
-		var idPref = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.wunderlist.forward_id", "/")
+		var idPref = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.forward_id", "/")
 		req.accountName = server.prettyName ? server.prettyName : "";
 		if (idPref != "auto") {
 			var accAndId = idPref.split("/");
@@ -180,7 +180,7 @@ var gsend_to_wunderlist = {
 		if (!req) return;
 		
 		if (req.wunderlist) {
-			this.email = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.wunderlist.email", "me@wunderlist.com");
+			this.email = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.email", "me@wunderlist.com");
 //		} else if (!this.confirmENEmail()) {
 //			this.emptyQueue();
 //			return;
@@ -228,7 +228,7 @@ var gsend_to_wunderlist = {
 	createNoteInfo: function(selectedMsgs, append, reminder) {
 		var noteInfo = [];
 		var wunderlist = true;
-		var titlePref = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.wunderlist.title", "%S");
+		var titlePref = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.title", "%S");
 		var defaultTagsPref = "";
 
 		var len = selectedMsgs.length;
@@ -279,7 +279,7 @@ var gsend_to_wunderlist = {
 		this.msgCompFields.from = this.id.email;
 		this.msgCompFields.to = this.email;
 		
-		var saveSentPref = info.wunderlist ? "extensions.send_to_wunderlist.wunderlist.save_sent" : "extensions.send_to_wunderlist.save_sent";
+		var saveSentPref = info.wunderlist ? "extensions.send_to_wunderlist.save_sent" : "extensions.send_to_wunderlist.save_sent";
 		if (!nsPreferences.getBoolPref(saveSentPref, true) || this.isGmailIMAP) {
 			this.msgCompFields.fcc = "nocopy://";
 			this.msgCompFields.fcc2 = "nocopy://";
@@ -557,14 +557,14 @@ var gsend_to_wunderlist = {
 					document.getElementById("statusText").setAttribute("label", "Failed to send note.");
 				} else {
 					document.getElementById("statusText").setAttribute("label", "Forwarding to "+ appName + " ... done.");
-					var markFwdPref = info.wunderlist ? "extensions.send_to_wunderlist.wunderlist.mark_as_forwarded" : "extensions.send_to_wunderlist.mark_as_forwarded"
+					var markFwdPref = info.wunderlist ? "extensions.send_to_wunderlist.mark_as_forwarded" : "extensions.send_to_wunderlist.mark_as_forwarded"
 					if (nsPreferences.getBoolPref(markFwdPref, true)) {
 						msgHdr.flags = msgHdr.flags | Components.interfaces.nsMsgMessageFlags.Forwarded;
 					}
 				}
 				
 				//do next
-				var sendIntPref = info.wunderlist ? "extensions.send_to_wunderlist.wunderlist.send_interval" : "extensions.send_to_wunderlist.send_interval"
+				var sendIntPref = info.wunderlist ? "extensions.send_to_wunderlist.send_interval" : "extensions.send_to_wunderlist.send_interval"
 				var waitSec = nsPreferences.getIntPref(sendIntPref, 1);
 				if (that.sentMsgs != that.totalMsgs) {
 					if (waitSec > 0) {
@@ -836,10 +836,10 @@ var gsend_to_wunderlist = {
 		var sub = msgHdr.mime2DecodedSubject;
 		var app = wunderlist ? "wunderlist.": "";
 		if (isTitle) {
-			if (nsPreferences.getBoolPref("extensions.send_to_wunderlist." + app + "rm_mltag",false)) {
+			if (nsPreferences.getBoolPref("extensions.send_to_wunderlist.rm_mltag",false)) {
 				sub = sub.replace(/^(?:\[[^\]]+\]|\([^\)]+\))+/i, "");
 			}
-			if (nsPreferences.getBoolPref("extensions.send_to_wunderlist." + app + "rm_re_fwd",false)) {  
+			if (nsPreferences.getBoolPref("extensions.send_to_wunderlist.rm_re_fwd",false)) {  
 				sub = sub.replace(/^(?:\s*re:\s*|\s*fwd:\s*|\s*fw:\s*)+/i, "");
 			} else if (msgHdr.flags & Components.interfaces.nsMsgMessageFlags.HasRe) {
 				sub = "Re: " + sub;
