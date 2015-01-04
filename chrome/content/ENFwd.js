@@ -102,34 +102,6 @@ var gsend_to_wunderlist = {
 		this.requests = [];
 	},
 	
-	selectionToHTML: function() {
-		var sel = GetMessagePaneFrame().getSelection();
-		var selCnt = sel ? sel.rangeCount : 0;
-
-		if (selCnt < 1) {
-			return "";
-		}
-		
-		var xmlStr = "";
-		var xmlSerializer = new XMLSerializer();
-		for (var i=0; i<selCnt; i++) {
-			var snode = sel.getRangeAt(i).cloneContents();
-			dump("[ENF]" + snode);
-			xmlStr += "<p>" + xmlSerializer.serializeToString(snode) + "</p>";
-		}
-		
-		if (!/<br/ig.test(xmlStr)) xmlStr = xmlStr.replace(/\n/g, "<br/>");
-		var ret = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">'
-				+ '<head>'
-				+ '<meta http-equiv="content-type" content="text/html;charset=UTF-8">'
-				+	'</head>'
-				+	'<body><div>'
-				+ xmlStr
-				+ '</div></body>'
-				+ '</html>'
-		return ret;
-	},
-	
 	forwardSelectedMsgsWunderList: function(event, skey) {
 		this.forwardSelectedMsgs(event, false, skey, false);
 	},
@@ -167,9 +139,6 @@ var gsend_to_wunderlist = {
 		req.noteInfo = this.createNoteInfo(gFolderDisplay.selectedMessages, pressShift, remInfo, wunderlist);
 		
 		req.totalMsgs = req.noteInfo.length;
-		if (req.totalMsgs > 0) {
-			req.noteInfo[0].selection = this.selectionToHTML(); 
-		}
 
 		this.registerRequest(req);
 		this.doNextRequest();
