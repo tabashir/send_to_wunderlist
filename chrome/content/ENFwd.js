@@ -260,7 +260,6 @@ var gsend_to_wunderlist = {
 		var noteInfo = [];
 		var wunderlist = true;
 		var titlePref = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.wunderlist.title", "%S");
-		var notebookPref = "";
 		var defaultTagsPref = "";
 
 		var len = selectedMsgs.length;
@@ -268,7 +267,7 @@ var gsend_to_wunderlist = {
 		for (var i=0; i<len; i++) {
 			var msgHdr = selectedMsgs[i];
 			var defaultTags = "";
-//			var tags = !wunderlist && nsPreferences.getBoolPref("extensions.send_to_wunderlist.add_msg_tags", false) ? this.getTagsForMsg(msgHdr) : [];
+//			var tags = nsPreferences.getBoolPref("extensions.send_to_wunderlist.add_msg_tags", false) ? this.getTagsForMsg(msgHdr) : [];
 			var tags = [];
 			if (defaultTagsPref) {
 
@@ -277,11 +276,9 @@ var gsend_to_wunderlist = {
 			}
 			
 			var title = this.expandMetaCharacters(titlePref, msgHdr, true, wunderlist);
-			var notebook = this.expandMetaCharacters(notebookPref, msgHdr, true, wunderlist);
 			var info = {
 				msgHdr: msgHdr,
 				title: title,
-				notebook: notebook,
 				tags: tags,
 				append: append,
 				reminder: reminder.enable,
@@ -308,44 +305,37 @@ var gsend_to_wunderlist = {
 	forwardMsg: function(info) {
 		var msgHdr = info.msgHdr;
 		
-		if (info.wunderlist) {
-			this.msgCompFields = Components.classes["@mozilla.org/messengercompose/composefields;1"]
-				.createInstance(Components.interfaces.nsIMsgCompFields);
-			this.msgCompFields.from = this.id.email;
-			this.msgCompFields.to = this.email;
-			
-			var saveSentPref = info.wunderlist ? "extensions.send_to_wunderlist.wunderlist.save_sent" : "extensions.send_to_wunderlist.save_sent";
-			if (!nsPreferences.getBoolPref(saveSentPref, true) || this.isGmailIMAP) {
-				this.msgCompFields.fcc = "nocopy://";
-				this.msgCompFields.fcc2 = "nocopy://";
-			}
-
-			var noteStr = info.notebook ? "@" + info.notebook : "";
-			var tagsStr = info.tags && info.tags.length > 0 ? this.getTagsString(info.tags) : "";
-			var remStr = info.reminder ? "!" + info.reminderDate : ""
-			
-			var subject = info.title;
-			if (info.append) {
-				subject = subject + " " + "+";
-			} else {
-				subject = subject + " " + remStr + " " + noteStr + tagsStr;
-			}
-
-			//this.msgCompFields.subject = this.encode(subject, 9, 72, msgHdr.Charset);
-			//force UTF-8 encoding since added characters becomes ??? if msgHdr.Charset does not support it.
-			this.msgCompFields.subject = this.encode(subject, 9, 72, null);
-			try {
-				//this.sendMsgFile(info);
-				this.stripAttachmentsAndFwd(info);
-			}catch(e){
-				dump(e);
-			}
-			return true;
-		} else { //sent times error
-			document.getElementById("statusText").setAttribute("label", "You cannot send note anymore today. Canceled.");
-			this.emptyQueue();
-			return false;
+		this.msgCompFields = Components.classes["@mozilla.org/messengercompose/composefields;1"]
+			.createInstance(Components.interfaces.nsIMsgCompFields);
+		this.msgCompFields.from = this.id.email;
+		this.msgCompFields.to = this.email;
+		
+		var saveSentPref = info.wunderlist ? "extensions.send_to_wunderlist.wunderlist.save_sent" : "extensions.send_to_wunderlist.save_sent";
+		if (!nsPreferences.getBoolPref(saveSentPref, true) || this.isGmailIMAP) {
+			this.msgCompFields.fcc = "nocopy://";
+			this.msgCompFields.fcc2 = "nocopy://";
 		}
+
+		var tagsStr = info.tags && info.tags.length > 0 ? this.getTagsString(info.tags) : "";
+		var remStr = info.reminder ? "!" + info.reminderDate : ""
+		
+		var subject = info.title;
+		if (info.append) {
+			subject = subject + " " + "+";
+		} else {
+			subject = subject + " " + remStr + " " + tagsStr;
+		}
+
+		//this.msgCompFields.subject = this.encode(subject, 9, 72, msgHdr.Charset);
+		//force UTF-8 encoding since added characters becomes ??? if msgHdr.Charset does not support it.
+		this.msgCompFields.subject = this.encode(subject, 9, 72, null);
+		try {
+			//this.sendMsgFile(info);
+			this.stripAttachmentsAndFwd(info);
+		}catch(e){
+			dump(e);
+		}
+		return true;
 	},
 	
 	getTagsForMsg: function(msgHdr) {
@@ -382,12 +372,6 @@ var gsend_to_wunderlist = {
 	
 	decode: function(str) {
 		return this.mimeConverter.decodeMimeHeader(str, null, false, true);
-	},
-	
-	saveSentDone: function() {
-		var sent = 0;
-		sent = nsPreferences.getIntPref("extensions.send_to_wunderlist.sent_times", 0) + 1;
-		nsPreferences.setIntPref("extensions.send_to_wunderlist.sent_times", sent);
 	},
 	
 	getTagsString: function(tags) {
@@ -571,7 +555,7 @@ var gsend_to_wunderlist = {
 	sendMsgFile: function(info) {
 		var msgHdr = info.msgHdr;
 		var msgFile = null;
-		var appName = info.wunderlist ? "wunderlist" : "Evernote";
+		var appName = "wunderlist";
 		dump("[ENF] Forward by Inline mode\n");
 		msgFile = this.composeAsInline(info);
 		
@@ -604,7 +588,6 @@ var gsend_to_wunderlist = {
 					document.getElementById("statusText").setAttribute("label", "Failed to send note.");
 				} else {
 					document.getElementById("statusText").setAttribute("label", "Forwarding to "+ appName + " ... done.");
-					if (!info.wunderlist) that.saveSentDone();
 					var markFwdPref = info.wunderlist ? "extensions.send_to_wunderlist.wunderlist.mark_as_forwarded" : "extensions.send_to_wunderlist.mark_as_forwarded"
 					if (nsPreferences.getBoolPref(markFwdPref, true)) {
 						msgHdr.flags = msgHdr.flags | Components.interfaces.nsMsgMessageFlags.Forwarded;
@@ -868,10 +851,16 @@ var gsend_to_wunderlist = {
 		return addrs.join(", ");
 	},
 
-	escapeHTMLMetaCharacter: function(str) {
-		return str.replace(/["&'<>]/gm,
-																function(c) { return { '"':'&quot;', '&':'&amp;', '\'':'&#39;', '<':'&lt;', '>':'&gt;' }[c]; }
-																);
+	escapeHTMLMetaCharacter : function(str) {
+		return str.replace(/["&'<>]/gm, function(c) {
+			return {
+				'"' : '&quot;',
+				'&' : '&amp;',
+				'\'' : '&#39;',
+				'<' : '&lt;',
+				'>' : '&gt;'
+			}[c];
+		});
 	},
 	
 	expandMetaCharacters: function(str, msgHdr, isTitle, fwdAtts, delAtts, escape, wunderlist) {
@@ -958,47 +947,47 @@ var gsend_to_wunderlist = {
 		
 		str = str.replace(/\%L/gm, this.getThunderLink(msgHdr));
 
-		if (fwdAtts) {
-			var name = "";
-			var cols = 0;
-			var atts = [];
-			for (name in fwdAtts) {
-				var att = fwdAtts[name];
-				if (att && !att.del) {
-					var htmlBR = "";
-					if (this.wrapLength > 0 && cols + name.length > this.wrapLength) { //wrap
-						htmlBR = "<BR>";
-						cols = name.length;
-					} else {
-						cols = cols + name.length + 2; //2 means , and space
-					}
-					atts.push(htmlBR + this.escapeHTMLMetaCharacter(name));
-				}
-			}
-			var attsStr = atts.join(", ");
-			str = str.replace(/\%r/gm, attsStr);
-		}
+//		if (fwdAtts) {
+//			var name = "";
+//			var cols = 0;
+//			var atts = [];
+//			for (name in fwdAtts) {
+//				var att = fwdAtts[name];
+//				if (att && !att.del) {
+//					var htmlBR = "";
+//					if (this.wrapLength > 0 && cols + name.length > this.wrapLength) { //wrap
+//						htmlBR = "<BR>";
+//						cols = name.length;
+//					} else {
+//						cols = cols + name.length + 2; //2 means , and space
+//					}
+//					atts.push(htmlBR + this.escapeHTMLMetaCharacter(name));
+//				}
+//			}
+//			var attsStr = atts.join(", ");
+//			str = str.replace(/\%r/gm, attsStr);
+//		}
 
-		if (delAtts) {
-			var name = "";
-			var cols = 0;
-			var atts = [];
-			for (name in delAtts) {
-				var att = delAtts[name];
-				if (att && att.del) {
-					var htmlBR = "";
-					if (this.wrapLength > 0 && cols + name.length > this.wrapLength) { //wrap
-						htmlBR = "<BR>";
-						cols = name.length;
-					} else {
-						cols = cols + name.length + 2; //2 means , and space
-					}
-					atts.push(htmlBR + this.escapeHTMLMetaCharacter(name));
+//		if (delAtts) {
+		var name = "";
+		var cols = 0;
+		var atts = [];
+		for (name in delAtts) {
+			var att = delAtts[name];
+			if (att && att.del) {
+				var htmlBR = "";
+				if (this.wrapLength > 0 && cols + name.length > this.wrapLength) { //wrap
+					htmlBR = "<BR>";
+					cols = name.length;
+				} else {
+					cols = cols + name.length + 2; //2 means , and space
 				}
+				atts.push(htmlBR + this.escapeHTMLMetaCharacter(name));
 			}
-			var attsStr = atts.join(", ");
-			str = str.replace(/\%R/gm, attsStr);
 		}
+		var attsStr = atts.join(", ");
+		str = str.replace(/\%R/gm, attsStr);
+//		}
 
 		return str;
 	},
