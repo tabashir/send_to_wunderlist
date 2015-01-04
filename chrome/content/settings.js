@@ -29,13 +29,7 @@ var gENFSettings = {
 				nsPreferences.setUnicharPref(prefstr, element.getAttribute("skey"));
 			}
 		}
-		this.saveMemoText();
 		return true;
-	},
-	
-	saveMemoText: function() {
-		this.writeStringToFile(this.prefix+"Header.txt", document.getElementById(this.prefix+"HeaderText").value);
-		this.writeStringToFile(this.prefix+"Footer.txt", document.getElementById(this.prefix+"FooterText").value);
 	},
 	
 	cancelPrefs: function() {
@@ -73,13 +67,6 @@ var gENFSettings = {
 			document.getElementById(this.prefix+"Notebook").setAttribute("value", "%F");
 			nsPreferences.setBoolPref("extensions.send_to_wunderlist.use_folder_name", false);
 		}
-		
-		this.loadMemoText();
-	},
-	
-	loadMemoText: function() {
-		document.getElementById(this.prefix+"HeaderText").value = this.loadFileToString(this.prefix+"Header.txt");
-		document.getElementById(this.prefix+"FooterText").value = this.loadFileToString(this.prefix+"Footer.txt");	
 	},
 	
 	editTagList: function(event) {
@@ -269,3 +256,38 @@ var gENFSettings = {
 		}
 	}
 };
+
+function STWSettings(){}
+STWSettings.prototype = gENFSettings;
+
+var gSTWSettings = new STWSettings();
+gSTWSettings.init = function() {
+	this.prefix = "STW";
+	this.elementIDs = [
+/*
+			"Email",
+*/
+			"IdList",
+/*
+			"SendInterval",
+			"SaveInSent",
+			"MarkAsForward",
+			"NoteTitle",
+			"RmReFwd",
+			"RmMLTag",
+			"AttFwdMode",
+			"AttExtFilter",
+			"AttSizeFilter",
+			"SkeyEnable",
+*/
+			"Skey"
+/*
+			"SkeyAlt",
+			"SkeyCtrl",
+			"SkeyMeta"
+*/
+	];
+
+	window.addEventListener("dialogaccept",function(){gSTWSettings.savePrefs();});
+	window.addEventListener("dialogcancel",function(){gSTWSettings.cancelPrefs();});
+}
