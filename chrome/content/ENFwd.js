@@ -48,7 +48,32 @@ var gsend_to_wunderlist = {
 		
 		var that = this;
 	},
-	
+
+	getTextBody: function(info) {
+		var clazz001 = Components.classes["@mozilla.org/editor/texteditor;1"];
+//			var clazz001 = Components.classes["@mozilla.org/editor;1"];
+
+//		var clazz002 = Components.classesById["@mozilla.org/editor/texteditor;1"];
+//		document.getElementById("statusText").setAttribute("label", "clazz001" + clazz001);
+
+
+//		var editor = clazz001.createInstance(Components.interfaces.nsIEditor);
+//		document.getElementById("statusText").setAttribute("label", "editor" + editor);
+
+		var editor = clazz001.getService(Components.interfaces.nsIPlaintextEditor);
+
+//		var obj2 = clazz002.getService(Components.interfaces.nslEditor);
+
+//		var editor2 = Components.interfaces.nsIPlaintextEditor;
+//		var editor = Components.interfaces.nsIEditor;
+//		var editor3 = Components.interfaces.nsIHTMLEditor;
+
+
+		// 'text/html' works here too
+		var text = editor.outputToString('text/plain', 4);
+		return text;
+	},
+
 	setShortcutKey: function(rem, wunderlist) {
 		var prefix = rem ? "rem_" : "";
 		var app = "wunderlist.";
@@ -295,12 +320,15 @@ var gsend_to_wunderlist = {
 			subject = subject + " " + remStr + " " + tagsStr;
 		}
 
-		//this.msgCompFields.subject = this.encode(subject, 9, 72, msgHdr.Charset);
+		this.msgCompFields.body = 'hello world';
+
+	//this.msgCompFields.subject = this.encode(subject, 9, 72, msgHdr.Charset);
 		//force UTF-8 encoding since added characters becomes ??? if msgHdr.Charset does not support it.
 		this.msgCompFields.subject = this.encode(subject, 9, 72, null);
 		try {
-			//this.sendMsgFile(info);
-			this.stripAttachmentsAndFwd(info);
+			//info.msgBody = this.getTextBody(info);
+			this.sendMsgFile(info);
+//			this.stripAttachmentsAndFwd(info);
 		}catch(e){
 			dump(e);
 		}
@@ -458,7 +486,7 @@ var gsend_to_wunderlist = {
 				//os.write(writeData, writeData.length);
 				//var writeData = filter ? this.filterAttachments(data, info) : data;
 				//if (writeData) os.write(writeData, writeData.length);
-				this.filterAndWrite(os, data, info, filter);
+//				this.filterAndWrite(os, data, info, true);
 				//os.write(data, data.length);
 				data = "";
 			}
@@ -467,8 +495,6 @@ var gsend_to_wunderlist = {
 		//flush attachments filter
 		if (filter) {
 			this.filterAndWrite(os, "", info, filter);
-			//var writeData = this.filterAttachments("", info);
-			//if (writeData) os.write(writeData, writeData.length);
 		}
 		
 		messageStream.close();
@@ -479,7 +505,6 @@ var gsend_to_wunderlist = {
 	},
 	
 	filterAndWrite: function(os, data, info, filter) {
-		//var writeData = filter ? this.filterAttachments(data, info) : data;
 		var writeData = this.filterAttachments(data, info, filter);
 		if (writeData) os.write(writeData, writeData.length);	
 	},
@@ -763,20 +788,8 @@ var gsend_to_wunderlist = {
 		
 		return ret;
 	},
-	
-	text2html: function(str, escape) {
-		var ret = escape ? this.escapeHTMLMetaCharacter(str) : str;
-		ret = ret.split("\n").join("<br>");
-		ret = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">'
-				+ '<head>'
-				+ '<meta http-equiv="content-type" content="text/html;charset=UTF-8">'
-				+	'</head>'
-				+	'<body><div>'
-				+ ret
-				+ '</div></body>'
-				+ '</html>'
-		return ret;
-	},
+
+
 	
 	getThunderLink: function(message) {
 		return "thunderlink://" + "messageid=" + message.messageId;
@@ -832,9 +845,8 @@ var gsend_to_wunderlist = {
 		});
 	},
 	
-	expandMetaCharacters: function(str, msgHdr, isTitle, fwdAtts, delAtts, escape, wunderlist) {
+	expandMetaCharacters: function(str, msgHdr, isTitle, fwdAtts, delAtts, escape) {
 		var sub = msgHdr.mime2DecodedSubject;
-		var app = wunderlist ? "wunderlist.": "";
 		if (isTitle) {
 			if (nsPreferences.getBoolPref("extensions.send_to_wunderlist.rm_mltag",false)) {
 				sub = sub.replace(/^(?:\[[^\]]+\]|\([^\)]+\))+/i, "");
@@ -1017,20 +1029,6 @@ var gsend_to_wunderlist = {
 		}
 	},
 
-	utf8ToBase64: function(str) {
-		var b64 = window.btoa(unescape(encodeURIComponent(str)));
-		var ret = "";
-		var start = 0;
-		var len = b64.length;
-		for (; start + 76 < len; start += 76) {
-			ret += b64.substr(start, 76) + "\r\n";
-		}
-
-		if (start < len) ret += b64.substr(start) + "\r\n";
-
-		return ret;
-	},
-
 	base64ToUtf8: function(str) {
 		return decodeURIComponent(escape(window.atob(str)));
 	},
@@ -1060,6 +1058,7 @@ var gsend_to_wunderlist = {
 		};
 		MsgHdrToMimeMessage(msgHdr,null,mimeCallback);
 	}
+
 };
 
 window.addEventListener("load", function(){gsend_to_wunderlist.init()}, false);

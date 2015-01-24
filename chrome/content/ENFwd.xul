@@ -23,9 +23,9 @@
     <menuitem id="ENFwd_mailContext-forward_to_wunderlist" insertafter="mailContext-forwardAsMenu,mailContext-forward"
     					observes="ENFwd:FwdMenu"
     					label="Forward to wunderlist" oncommand="gsend_to_wunderlist.forwardSelectedMsgsWunderList(event)" />
-    <menuitem id="ENFwd_mailContext-forward_to_wunderlist_and_archive" insertafter="ENFwd_mailContext-forward_to_wunderlist"
+    <!--menuitem id="ENFwd_mailContext-forward_to_wunderlist_and_archive" insertafter="ENFwd_mailContext-forward_to_wunderlist"
     					observes="ENFwd:FwdMenu"
-    					label="Forward to wunderlist and Archive" oncommand="gsend_to_wunderlist.forwardSelectedMsgsWunderListAndArchive(event)" />
+    					label="Forward to wunderlist and Archive" oncommand="gsend_to_wunderlist.forwardSelectedMsgsWunderListAndArchive(event)" /-->
   </popup>
 
 	<menupopup id="button-ForwardPopup">
