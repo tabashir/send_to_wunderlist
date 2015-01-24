@@ -278,7 +278,6 @@ var gsend_to_wunderlist = {
 				reminder: reminder.enable,
 				reminderDate: reminder.date,
 				delAttachments: [],
-				fwdAttachments: [],
 				selection: "",
 				wunderlist: wunderlist,
 				canceled: false
@@ -671,19 +670,17 @@ var gsend_to_wunderlist = {
 		this.changePopupMenuState();
 		
 		this.msgSend.sendMessageFile(
-			 this.id,                // in nsIMsgIdentity       aUserIdentity,
+			 this.id,                		// in nsIMsgIdentity       aUserIdentity,
 			 this.account.key,          // char* accountKey,
-			 //id.key,          // char* accountKey,
-			 this.msgCompFields,                   // in nsIMsgCompFields     fields,
-			 msgFile,                        // in nsIFile          sendIFile,
-			 false,                            // in PRBool               deleteSendFileOnCompletion,
-			 false,                           // in PRBool               digest_p,
-//				 this.msgSend.nsMsgDeliverNow,         // in nsMsgDeliverMode     mode,
-			 deliverMode,         // in nsMsgDeliverMode     mode,
-			 null,                            // in nsIMsgDBHdr          msgToReplace,
-			 sendListener,     // in nsIMsgSendListener   aListener,
-			 feedback,   // in nsIMsgStatusFeedback aStatusFeedback,
-			 ""                             // in string               password
+			 this.msgCompFields,        // in nsIMsgCompFields     fields,
+				 msgFile,                 // in nsIFile          sendIFile,
+			 false,                     // in PRBool               deleteSendFileOnCompletion,
+			 false,                     // in PRBool               digest_p,
+			 deliverMode,       				// in nsMsgDeliverMode     mode,
+			 null,               				// in nsIMsgDBHdr          msgToReplace,
+			 sendListener,     					// in nsIMsgSendListener   aListener,
+			 feedback,   								// in nsIMsgStatusFeedback aStatusFeedback,
+			 ""                         // in string               password
 		);
 		
 		if (previewMode) {
@@ -780,10 +777,6 @@ var gsend_to_wunderlist = {
 					break;
 				default:
 			}
-			
-			//if (!this.filterAttachWS.inAttachBody) {
-			//	ret = ret + line + "\r\n";
-			//}
 		}
 		
 		return ret;
@@ -928,28 +921,6 @@ var gsend_to_wunderlist = {
 		
 		str = str.replace(/\%L/gm, this.getThunderLink(msgHdr));
 
-//		if (fwdAtts) {
-//			var name = "";
-//			var cols = 0;
-//			var atts = [];
-//			for (name in fwdAtts) {
-//				var att = fwdAtts[name];
-//				if (att && !att.del) {
-//					var htmlBR = "";
-//					if (this.wrapLength > 0 && cols + name.length > this.wrapLength) { //wrap
-//						htmlBR = "<BR>";
-//						cols = name.length;
-//					} else {
-//						cols = cols + name.length + 2; //2 means , and space
-//					}
-//					atts.push(htmlBR + this.escapeHTMLMetaCharacter(name));
-//				}
-//			}
-//			var attsStr = atts.join(", ");
-//			str = str.replace(/\%r/gm, attsStr);
-//		}
-
-//		if (delAtts) {
 		var name = "";
 		var cols = 0;
 		var atts = [];
@@ -968,8 +939,6 @@ var gsend_to_wunderlist = {
 		}
 		var attsStr = atts.join(", ");
 		str = str.replace(/\%R/gm, attsStr);
-//		}
-
 		return str;
 	},
 
@@ -1033,30 +1002,26 @@ var gsend_to_wunderlist = {
 		return decodeURIComponent(escape(window.atob(str)));
 	},
 
-	stripAttachmentsAndFwd: function(info) {
+	stripAttachmentsAndFwd : function (info) {
 		var msgHdr = info.msgHdr;
 		if (!(msgHdr.flags & Components.interfaces.nsMsgMessageFlags.Attachment)) {
 			this.sendMsgFile(info);
 		} else {
 			var msgHdr = info.msgHdr;
 			var that = this;
-			var mimeCallback = function(msgHdr, mimeMsg) {
+			MsgHdrToMimeMessage(msgHdr, null, function (msgHdr, mimeMsg) {
 				var atts = mimeMsg.allAttachments;
 				var delAttachments = [];
-				var fwdAttachments = [];
 				var app = info.wunderlist ? "wunderlist." : ""
 
-				for (var i=0; i<atts.length; i++) {
+				for (var i = 0; i < atts.length; i++) {
 					var att = atts[i];
-					delAttachments[att.name] = {size: att.size, del: true};
+					delAttachments[att.name] = {size : att.size, del : true};
 				}
-
 				info.delAttachments = delAttachments;
-				info.fwdAttachments = fwdAttachments;
 				that.sendMsgFile(info);
-			}
-		};
-		MsgHdrToMimeMessage(msgHdr,null,mimeCallback);
+			});
+		}
 	}
 
 };
