@@ -49,31 +49,6 @@ var gsend_to_wunderlist = {
 		var that = this;
 	},
 
-	getTextBody: function(info) {
-		var clazz001 = Components.classes["@mozilla.org/editor/texteditor;1"];
-//			var clazz001 = Components.classes["@mozilla.org/editor;1"];
-
-//		var clazz002 = Components.classesById["@mozilla.org/editor/texteditor;1"];
-//		document.getElementById("statusText").setAttribute("label", "clazz001" + clazz001);
-
-
-//		var editor = clazz001.createInstance(Components.interfaces.nsIEditor);
-//		document.getElementById("statusText").setAttribute("label", "editor" + editor);
-
-		var editor = clazz001.getService(Components.interfaces.nsIPlaintextEditor);
-
-//		var obj2 = clazz002.getService(Components.interfaces.nslEditor);
-
-//		var editor2 = Components.interfaces.nsIPlaintextEditor;
-//		var editor = Components.interfaces.nsIEditor;
-//		var editor3 = Components.interfaces.nsIHTMLEditor;
-
-
-		// 'text/html' works here too
-		var text = editor.outputToString('text/plain', 4);
-		return text;
-	},
-
 	setShortcutKey: function(rem, wunderlist) {
 		var prefix = rem ? "rem_" : "";
 		var app = "wunderlist.";
@@ -239,7 +214,7 @@ var gsend_to_wunderlist = {
 						this.forwardNextMsg();
 					}
 				}catch(e){
-					dump("[ENF]Error in forwarding:\n")
+					dump("[STW]Error in forwarding:\n")
 					dump(e+"\n");
 					dump("Goto next\n")
 					this.forwardNextMsg();
@@ -325,9 +300,7 @@ var gsend_to_wunderlist = {
 		//force UTF-8 encoding since added characters becomes ??? if msgHdr.Charset does not support it.
 		this.msgCompFields.subject = this.encode(subject, 9, 72, null);
 		try {
-			//info.msgBody = this.getTextBody(info);
-			this.sendMsgFile(info);
-//			this.stripAttachmentsAndFwd(info);
+			this.stripAttachmentsAndFwd(info);
 		}catch(e){
 			dump(e);
 		}
@@ -549,7 +522,7 @@ var gsend_to_wunderlist = {
 		var msgHdr = info.msgHdr;
 		var msgFile = null;
 		var appName = "wunderlist";
-		dump("[ENF] Forward by Inline mode\n");
+		dump("[STW] Forward by Inline mode\n");
 		msgFile = this.composeAsInline(info);
 		
 		var previewMode = nsPreferences.getBoolPref("extensions.send_to_wunderlist.preview_mode", false);
@@ -588,24 +561,11 @@ var gsend_to_wunderlist = {
 				}
 				
 				//do next
-				var sendIntPref = info.wunderlist ? "extensions.send_to_wunderlist.send_interval" : "extensions.send_to_wunderlist.send_interval"
-				var waitSec = nsPreferences.getIntPref(sendIntPref, 1);
-				if (that.sentMsgs != that.totalMsgs) {
-					if (waitSec > 0) {
-						document.getElementById("statusText").setAttribute("label", "Waiting " + waitSec + " seconds ...");
-					} else {
-						waitSec = 1;
-					}
-					setTimeout(
-						function() {that.forwardNextMsg();},
-						 waitSec * 1000
-					);
-				} else {
-					setTimeout(
-						function() {that.locked = false; that.changePopupMenuState(); that.forwardNextMsg();},
-						 waitSec * 1000
-					);
+				if (that.sentMsgs == that.totalMsgs) {
+					that.locked = false;
+					that.changePopupMenuState();
 				}
+				that.forwardNextMsg();
 			},
 			
 			onGetDraftFolderURI: function(aFolderURI) {

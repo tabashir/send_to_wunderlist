@@ -1,7 +1,6 @@
 pref("extensions.send_to_wunderlist.email", "me@wunderlist.com");
 pref("extensions.send_to_wunderlist.forward_mode", 0);
 pref("extensions.send_to_wunderlist.forward_id", "");
-pref("extensions.send_to_wunderlist.send_interval", 1);
 pref("extensions.send_to_wunderlist.save_sent", true);
 pref("extensions.send_to_wunderlist.mark_as_forwarded", true);
 pref("extensions.send_to_wunderlist.show_conf_dialog", false);

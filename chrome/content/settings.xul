@@ -17,7 +17,6 @@
 		<preferences>
 			<preference id="pref_wunderlist.email" name="extensions.send_to_wunderlist.email" type="unichar"/>
 			<preference id="pref_wunderlist.forward_id" name="extensions.send_to_wunderlist.forward_id" type="unichar"/>
-			<preference id="pref_wunderlist.send_interval" name="extensions.send_to_wunderlist.send_interval" type="int"/>
 			<preference id="pref_wunderlist.save_sent" name="extensions.send_to_wunderlist.save_sent" type="bool"/>
 			<preference id="pref_wunderlist.mark_as_forwarded" name="extensions.send_to_wunderlist.mark_as_forwarded" type="bool"/>
 			<preference id="pref_wunderlist.rm_re_fwd" name="extensions.send_to_wunderlist.rm_re_fwd" type="bool"/>
@@ -56,12 +55,6 @@
 							<menupopup id="STWIdListPopup">
 							</menupopup>
 						</menulist>
-					</hbox>
-					<hbox align="center">
-						<label value="Interval between sending notes:"/>
-						<textbox id="STWSendInterval" type="number" min="0" max="3600" size="2" multiline="false"
-										wraparound="true"  preference="pref_wunderlist.send_interval" />
-						<label value="seconds"/>
 					</hbox>
 					<checkbox id="STWSaveInSent" label="Save note in sent folder"
 					  				preference="pref_wunderlist.save_sent" />
