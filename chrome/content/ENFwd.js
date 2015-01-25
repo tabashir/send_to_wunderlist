@@ -59,27 +59,29 @@ var gsend_to_wunderlist = {
 			keyElem = wunderlist ? document.getElementById("ENF:key_FwdMsgsWunderList") : document.getElementById("ENF:key_FwdMsgs");
 		}
 
-		if (!nsPreferences.getBoolPref("extensions.send_to_wunderlist." + prefix + "enable_skey", false)) {
+		var keyPrefix = "extensions.send_to_wunderlist." + prefix;
+
+		if (!nsPreferences.getBoolPref(keyPrefix + "enable_skey", false)) {
 			keyElem.setAttribute("disabled", true);
 			return;
 		}
 
-		var skey = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist." + prefix + "skey", "");
+		var skey = nsPreferences.copyUnicharPref(keyPrefix + "skey", "");
 		if (!skey) {
 			keyElem.setAttribute("disabled", true);
 			return;
 		}
 
 		var modifiers = [];
-		if (nsPreferences.getBoolPref("extensions.send_to_wunderlist." + prefix + "skey_ctrl", false)) {
+		if (nsPreferences.getBoolPref(keyPrefix + "skey_ctrl", false)) {
 			modifiers.push("control");
 		}
 
-		if (nsPreferences.getBoolPref("extensions.send_to_wunderlist." + prefix + "skey_alt", false)) {
+		if (nsPreferences.getBoolPref(keyPrefix + "skey_alt", false)) {
 			modifiers.push("alt");
 		}
 
-		if (nsPreferences.getBoolPref("extensions.send_to_wunderlist." + prefix + "skey_meta", false)) {
+		if (nsPreferences.getBoolPref(keyPrefix + "skey_meta", false)) {
 			modifiers.push("meta");
 		}
 
@@ -179,13 +181,8 @@ var gsend_to_wunderlist = {
 		var req = this.requests.shift();
 		if (!req) return;
 		
-		if (req.wunderlist) {
-			this.email = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.email", "me@wunderlist.com");
-//		} else if (!this.confirmENEmail()) {
-//			this.emptyQueue();
-//			return;
-		}
-		
+		this.email = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.email", "me@wunderlist.com");
+
 		this.isGmailIMAP = req.isGmailIMAP;
 		this.totalMsgs = req.totalMsgs;
 		this.sentMsgs = 0;
@@ -273,8 +270,7 @@ var gsend_to_wunderlist = {
 	forwardMsg: function(info) {
 		var msgHdr = info.msgHdr;
 		
-		this.msgCompFields = Components.classes["@mozilla.org/messengercompose/composefields;1"]
-			.createInstance(Components.interfaces.nsIMsgCompFields);
+		this.msgCompFields = Components.classes["@mozilla.org/messengercompose/composefields;1"].createInstance(Components.interfaces.nsIMsgCompFields);
 		this.msgCompFields.from = this.id.email;
 		this.msgCompFields.to = this.email;
 		
@@ -298,7 +294,7 @@ var gsend_to_wunderlist = {
 		//force UTF-8 encoding since added characters becomes ??? if msgHdr.Charset does not support it.
 		this.msgCompFields.subject = this.encode(subject, 9, 72, null);
 		try {
-			this.stripAttachmentsAndFwd(info);
+			this.sendMsgFile(info);
 		}catch(e){
 			dump(e);
 		}
@@ -365,7 +361,11 @@ var gsend_to_wunderlist = {
 							+ ' boundary="' + boundary + '"' + "\r\n"
 							+ "\r\n"
 							+ "This is a multi-part message in MIME format.\r\n"
-		return [str, boundary];
+		return {
+			headerString: str,
+			boundary: boundary,
+			length: str.length
+		};
 	},
 	
 	composeAsInline: function(info) {
@@ -384,84 +384,9 @@ var gsend_to_wunderlist = {
 									createInstance(Components.interfaces.nsIFileOutputStream);
 		os.init(msgFile, 2, 0x200, false); // open as "write only"
 		
-		var data = "";
-		var eohInfo = null;
-		
-		//setup attachments filter
-		//check delAttachments is empty or not
-		var filter = false;
-		var key = "";
-		for (key in info.delAttachments) {
-			filter = true;
-			break;
-		}
-		this.initFilterAttachWS();
-		var bodyText = "";
+		var messageText = this.createHeaderString();
+		os.write(messageText.headerString, messageText.length);
 
-		while (inputStream.available()) {
-			data += inputStream.read(512);
-			if (!eohInfo) {
-				eohInfo = this.findEndOfHeader(data);
-				if (!eohInfo) continue; //loop while end of header(\r\n\r\n) is found
-
-				var hdr = data.substring(0, eohInfo.index - (eohInfo.retcode.length * 2)).split(eohInfo.retcode);
-				if (data.length > eohInfo.index) data = data.substring(eohInfo.index, data.length);
-				else data = "";
-
-				var line = "";
-				var ignored = false;
-				var writeFrom = false;
-				var writeTo = false;
-				while (line = hdr.shift()) {
-					if ((ignored && /^\s+/.test(line))) continue;
-					if (ignored = this.isIgnoredHdr(line)) continue;
-					if (/^from:/i.test(line)) {
-						line = "From: " + this.msgCompFields.from;
-						writeFrom = true;
-						ignored = true;
-					} else if (/^to:/i.test(line)) {
-						line = "To: " + this.msgCompFields.to;
-						writeTo = true;
-						ignored = true;
-					} else if (/^subject:/i.test(line)) {
-						line = "Subject: " + this.msgCompFields.subject;
-						ignored = true;
-					}
-
-					//write line
-					line = hdr.length > 0 ? line + "\r\n" : line;
-					//os.write(line, line.length);
-					this.filterAndWrite(os, line, info, filter);
-				}
-				if (!writeFrom) {
-					line = "\r\n" + "From: " + this.msgCompFields.from;
-					//os.write(line, line.length);
-					this.filterAndWrite(os, line, info, filter);
-				}
-				if (!writeTo) {
-					line = "\r\n" + "To: " + this.msgCompFields.to;
-					//os.write(line, line.length);
-					this.filterAndWrite(os, line, info, filter);
-				}
-
-				line = "\r\n\r\n";
-				//os.write(line, line.length);
-				//os.write(data, data.length);
-				this.filterAndWrite(os, line, info, filter);
-				bodyText = data;
-				data = "";
-			} else {
-				//now in the message body
-				bodyText += data;
-				data = "";
-			}
-		}
-		this.filterAndWrite(os, bodyText, info, true);
-		//flush attachments filter
-		if (filter) {
-			this.filterAndWrite(os, "", info, filter);
-		}
-		
 		messageStream.close();
 		inputStream.close();
 		os.close();
@@ -469,48 +394,7 @@ var gsend_to_wunderlist = {
 		return msgFile;
 	},
 	
-	filterAndWrite: function(os, data, info, filter) {
-		var writeData = this.filterAttachments(data, info, filter);
-		if (writeData) os.write(writeData, writeData.length);	
-	},
-	
-	isIgnoredHdr: function(line) {
-		var ignored = /^>*from \S+ /i.test(line) ||
-			/^bcc: /i.test(line) ||
-			/^fcc: /i.test(line) ||
-			/^content-length: /i.test(line) ||
-			/^lines: /i.test(line) ||
-			/^status: /i.test(line) ||
-			/^x-.+: /i.test(line) ||
-			/^return-path: /i.test(line) ||
-			/^delivered-to: /i.test(line) ||
-			/^authentication-results: /i.test(line) ||
-			/^message-id: /i.test(line) ||
-			/^(?:in-)*reply-to: /i.test(line) ||
-			/^bounce-to: /i.test(line) ||
-			/^DKIM-Signature: /i.test(line) ||
-			/^DomainKey-Signature: /i.test(line) ||
-			/^received(?:-.+)*: /i.test(line);
-		
-		return ignored;
-	},
-	
-	findEndOfHeader: function(data) {
-		var candidates = ["\r\n", "\n\r", "\n", "\r"];
-		var headerEnd = -1;
-		var ret = null;
-		for (var i=0; i<candidates.length; i++) {
-			var candidate = candidates[i];
-			headerEnd = data.indexOf(candidate + candidate);
-			if (headerEnd != -1) {
-				ret = {index: headerEnd + (candidate.length * 2), retcode: candidate};
-				break;
-			}
-		}
-		
-		return ret;
-	},
-	
+
 	sendMsgFile: function(info) {
 		var msgHdr = info.msgHdr;
 		var msgFile = null;
@@ -519,8 +403,7 @@ var gsend_to_wunderlist = {
 		msgFile = this.composeAsInline(info);
 		
 		var previewMode = nsPreferences.getBoolPref("extensions.send_to_wunderlist.preview_mode", false);
-		this.msgSend = Components.classes["@mozilla.org/messengercompose/send;1"]
-									.createInstance(Components.interfaces.nsIMsgSend);
+		this.msgSend = Components.classes["@mozilla.org/messengercompose/send;1"].createInstance(Components.interfaces.nsIMsgSend);
 		var that = this;
 		//nsIMsgSendListener
 		var sendListener = {
@@ -641,99 +524,6 @@ var gsend_to_wunderlist = {
 			sendListener.onStopSending(null, 0, null, null);
 		}
 	},
-	
-	initFilterAttachWS: function() {
-		this.filterAttachWS.stat = "flush";
-		this.filterAttachWS.boundary = "";
-		this.filterAttachWS.buf = "";
-		this.filterAttachWS.prev = "";
-		this.filterAttachWS.inContentType = false;
-		this.filterAttachWS.name = "";
-		this.filterAttachWS.definedBoundaries = [];
-	},
-	
-	filterAttachments: function(data, info, filter) {
-		var lines = (this.filterAttachWS.prev + data).split("\r\n");
-		var ret = "";
-		var len = lines.length - 1;
-
-		if (len < 1) {
-			return lines[0]; //end of file. flush buffer.
-		} else {
-			this.filterAttachWS.prev = lines[len]; //last one line becomes prev
-		}
-		
-		for (var i=0; i<len; i++) {
-			var line = lines[i];
-			//invalidate s/mime signature
-			line = line.replace("multipart/signed", "multipart/mixed");
-			
-			if (!filter) { //don't filter but invalidate s/mime
-				ret = ret + line + "\r\n";
-				continue;
-			}
-			
-			if (this.filterAttachWS.inContentType && (line == "" || /^\S+/.test(line))) {
-				this.filterAttachWS.inContentType = false;
-				if (this.filterAttachWS.name) {
-					this.filterAttachWS.name = this.mimeConverter.decodeMimeHeader(this.filterAttachWS.name, null, false, true);
-					if (info.delAttachments[this.filterAttachWS.name]) {
-						this.filterAttachWS.stat = "skip";
-						this.filterAttachWS.buf = "";
-					}
-					this.filterAttachWS.name = "";
-				}
-				
-			}
-			
-			if (/^\-\-\S/.test(line)) { //boundary
-				if (this.filterAttachWS.definedBoundaries[line]) {//filters out non-boundary such as -->, --<spc>
-					if (this.filterAttachWS.stat != "skip" || line.indexOf(this.filterAttachWS.boundary) == 0) {
-						this.filterAttachWS.boundary = line;
-						this.filterAttachWS.stat = "boundary";
-					}
-				}
-			} else if (this.filterAttachWS.inContentType || (!this.filterAttachWS.name && /^Content-Type: /i.test(line))) {
-				var idx = line.indexOf("name=");
-				this.filterAttachWS.inContentType = true;
-				if (idx > 0) {
-					this.filterAttachWS.name = line.substring(idx+5).replace(/\"/g, "");
-					//this.filterAttachWS.stat = "skip";
-					//this.filterAttachWS.buf = "";
-				} else if (this.filterAttachWS.name) {
-					this.filterAttachWS.name += "\r\n" + line.replace(/\"/g, "");
-				}
-				
-				idx = line.indexOf("boundary=");
-				if (idx > 0) {
-					var boundary = line.substring(idx+9).replace(/\"/g, "");
-					this.filterAttachWS.definedBoundaries["--"+boundary] = true; //start of section
-					this.filterAttachWS.definedBoundaries["--"+boundary+"--"] = true; //end of section
-				}
-			} else if (this.filterAttachWS.stat == "buffer" && line == "") {
-				this.filterAttachWS.stat = "flush";
-			}
-
-			switch (this.filterAttachWS.stat) {
-				case "boundary":
-					ret = ret + line + "\r\n";
-					this.filterAttachWS.stat = "buffer";
-					break;
-				case "buffer":
-					this.filterAttachWS.buf = this.filterAttachWS.buf + line + "\r\n";
-					break;
-				case "skip":
-					break; //nothing is done
-				case "flush":
-					ret = ret + this.filterAttachWS.buf + line + "\r\n";
-					this.filterAttachWS.buf = "";
-					break;
-				default:
-			}
-		}
-		
-		return ret;
-	},
 
 	getThunderLink: function(message) {
 		return "thunderlink://" + "messageid=" + message.messageId;
@@ -798,7 +588,6 @@ var gsend_to_wunderlist = {
 		}
 
 		var author = this.createAddressesString(msgHdr.mime2DecodedAuthor, true, false);
-		//if (authorName.indexOf("@")) authorName = authorName.split("@")[0]; //only email address. use account name to avoid conflict with notebook
 		var authorName = this.createAddressesString(msgHdr.mime2DecodedAuthor, false, false);
 		var toList = this.createAddressesString(this.decode(msgHdr.recipients), true, !isTitle);
 		var ccList = this.createAddressesString(this.decode(msgHdr.ccList), true, !isTitle);
@@ -906,28 +695,6 @@ var gsend_to_wunderlist = {
 
 	base64ToUtf8: function(str) {
 		return decodeURIComponent(escape(window.atob(str)));
-	},
-
-	stripAttachmentsAndFwd : function (info) {
-		var msgHdr = info.msgHdr;
-		if (!(msgHdr.flags & Components.interfaces.nsMsgMessageFlags.Attachment)) {
-			this.sendMsgFile(info);
-		} else {
-			var msgHdr = info.msgHdr;
-			var that = this;
-			MsgHdrToMimeMessage(msgHdr, null, function (msgHdr, mimeMsg) {
-				var atts = mimeMsg.allAttachments;
-				var delAttachments = [];
-				var app = info.wunderlist ? "wunderlist." : ""
-
-				for (var i = 0; i < atts.length; i++) {
-					var att = atts[i];
-					delAttachments[att.name] = {size : att.size, del : true};
-				}
-				info.delAttachments = delAttachments;
-				that.sendMsgFile(info);
-			});
-		}
 	}
 
 };
