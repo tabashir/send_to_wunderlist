@@ -22,9 +22,6 @@
 			<preference id="pref_wunderlist.rm_re_fwd" name="extensions.send_to_wunderlist.rm_re_fwd" type="bool"/>
 			<preference id="pref_wunderlist.rm_mltag" name="extensions.send_to_wunderlist.rm_mltag" type="bool"/>
 			<preference id="pref_wunderlist.title" name="extensions.send_to_wunderlist.title" type="unichar"/>
-			<preference id="pref_wunderlist.attachments_forward_mode" name="extensions.send_to_wunderlist.attachments_forward_mode" type="int"/>
-			<preference id="pref_wunderlist.attachments_ext_filter" name="extensions.send_to_wunderlist.attachments_ext_filter" type="unichar"/>
-			<preference id="pref_wunderlist.attachments_size_filter" name="extensions.send_to_wunderlist.attachments_size_filter" type="unichar"/>
 			<preference id="pref_wunderlist.enable_skey" name="extensions.send_to_wunderlist.enable_skey" type="bool"/>
 			<preference id="pref_wunderlist.skey" name="extensions.send_to_wunderlist.skey" type="unichar"/>
 			<preference id="pref_wunderlist.skey_alt" name="extensions.send_to_wunderlist.skey_alt" type="bool"/>

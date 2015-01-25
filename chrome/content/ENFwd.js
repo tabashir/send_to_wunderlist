@@ -450,16 +450,8 @@ var gsend_to_wunderlist = {
 				//os.write(data, data.length);
 				this.filterAndWrite(os, line+data, info, filter);
 				data = "";
-			} else { //now in the message body
-				//write data
-				//var lines = data.split(eohInfo.retcode);
-				//data = lines.pop();
-				//var writeData = lines.join("\r\n");
-				//os.write(writeData, writeData.length);
-				//var writeData = filter ? this.filterAttachments(data, info) : data;
-				//if (writeData) os.write(writeData, writeData.length);
-//				this.filterAndWrite(os, data, info, true);
-				//os.write(data, data.length);
+			} else {
+			//now in the message body
 				data = "";
 			}
 		}
@@ -748,7 +740,7 @@ var gsend_to_wunderlist = {
 		return "thunderlink://" + "messageid=" + message.messageId;
 	},
 
-	createAddressesString: function(addrsStr, fullName, provideLink, wrap) {
+	createAddressesString: function(addrsStr, fullName, wrap) {
 
 		var addrs = [];
 		var addresses = {};
@@ -810,25 +802,22 @@ var gsend_to_wunderlist = {
 				sub = "Re: " + sub;
 			}
 		}
-//		var provideLink = !wunderlist && !isTitle && nsPreferences.getBoolPref("extensions.send_to_wunderlist.mailto_link", false);
-		var provideLink = false;
-		
-		
-		var author = this.createAddressesString(msgHdr.mime2DecodedAuthor, true, provideLink, false);
+
+		var author = this.createAddressesString(msgHdr.mime2DecodedAuthor, true, false);
 		//var authorName = this.hdrParser.extractHeaderAddressName(author);
 		//if (authorName.indexOf("@")) authorName = authorName.split("@")[0]; //only email address. use account name to avoid conflict with notebook
-		var authorName = this.createAddressesString(msgHdr.mime2DecodedAuthor, false, provideLink, false);
+		var authorName = this.createAddressesString(msgHdr.mime2DecodedAuthor, false, false);
 
 
 		//var toList = this.decode(msgHdr.recipients);
-		var toList = this.createAddressesString(this.decode(msgHdr.recipients), true, provideLink, !isTitle);
+		var toList = this.createAddressesString(this.decode(msgHdr.recipients), true, !isTitle);
 		//var ccList = this.decode(msgHdr.ccList);
-		var ccList = this.createAddressesString(this.decode(msgHdr.ccList), true, provideLink, !isTitle);
+		var ccList = this.createAddressesString(this.decode(msgHdr.ccList), true, !isTitle);
 
 		//var toNames = this.createAddressNamesStr(toList);
-		var toNames = this.createAddressesString(this.decode(msgHdr.recipients), false, provideLink, !isTitle);
+		var toNames = this.createAddressesString(this.decode(msgHdr.recipients), false, !isTitle);
 		//var ccNames = this.createAddressNamesStr(ccList);
-		var ccNames = this.createAddressesString(this.decode(msgHdr.ccList), false, provideLink, !isTitle);
+		var ccNames = this.createAddressesString(this.decode(msgHdr.ccList), false, !isTitle);
 		
 		var folderName = msgHdr.folder.prettiestName;
 		
