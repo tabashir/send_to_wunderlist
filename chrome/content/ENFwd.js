@@ -240,11 +240,11 @@ var gsend_to_wunderlist = {
 			var tags = [];
 			if (defaultTagsPref) {
 
-				defaultTags = this.expandMetaCharacters(defaultTagsPref, msgHdr, true, wunderlist);
+				defaultTags = this.expandMetaCharacters(defaultTagsPref, msgHdr, true);
 				tags = tags.concat(defaultTags.split(/\s*,\s*/));
 			}
 			
-			var title = this.expandMetaCharacters(titlePref, msgHdr, true, wunderlist);
+			var title = this.expandMetaCharacters(titlePref, msgHdr, true);
 			var info = {
 				msgHdr: msgHdr,
 				title: title,
@@ -294,9 +294,7 @@ var gsend_to_wunderlist = {
 			subject = subject + " " + remStr + " " + tagsStr;
 		}
 
-		this.msgCompFields.body = 'hello world';
-
-	//this.msgCompFields.subject = this.encode(subject, 9, 72, msgHdr.Charset);
+		//this.msgCompFields.subject = this.encode(subject, 9, 72, msgHdr.Charset);
 		//force UTF-8 encoding since added characters becomes ??? if msgHdr.Charset does not support it.
 		this.msgCompFields.subject = this.encode(subject, 9, 72, null);
 		try {
@@ -398,13 +396,14 @@ var gsend_to_wunderlist = {
 			break;
 		}
 		this.initFilterAttachWS();
-		
+		var bodyText = "";
+
 		while (inputStream.available()) {
 			data += inputStream.read(512);
 			if (!eohInfo) {
 				eohInfo = this.findEndOfHeader(data);
 				if (!eohInfo) continue; //loop while end of header(\r\n\r\n) is found
-				
+
 				var hdr = data.substring(0, eohInfo.index - (eohInfo.retcode.length * 2)).split(eohInfo.retcode);
 				if (data.length > eohInfo.index) data = data.substring(eohInfo.index, data.length);
 				else data = "";
@@ -417,11 +416,11 @@ var gsend_to_wunderlist = {
 					if ((ignored && /^\s+/.test(line))) continue;
 					if (ignored = this.isIgnoredHdr(line)) continue;
 					if (/^from:/i.test(line)) {
-						line = "From: "+this.msgCompFields.from;
+						line = "From: " + this.msgCompFields.from;
 						writeFrom = true;
 						ignored = true;
 					} else if (/^to:/i.test(line)) {
-						line = "To: "+this.msgCompFields.to;
+						line = "To: " + this.msgCompFields.to;
 						writeTo = true;
 						ignored = true;
 					} else if (/^subject:/i.test(line)) {
@@ -435,12 +434,12 @@ var gsend_to_wunderlist = {
 					this.filterAndWrite(os, line, info, filter);
 				}
 				if (!writeFrom) {
-					line = "\r\n" + "From: "+this.msgCompFields.from;
+					line = "\r\n" + "From: " + this.msgCompFields.from;
 					//os.write(line, line.length);
 					this.filterAndWrite(os, line, info, filter);
 				}
 				if (!writeTo) {
-					line = "\r\n" + "To: "+this.msgCompFields.to;
+					line = "\r\n" + "To: " + this.msgCompFields.to;
 					//os.write(line, line.length);
 					this.filterAndWrite(os, line, info, filter);
 				}
@@ -448,14 +447,16 @@ var gsend_to_wunderlist = {
 				line = "\r\n\r\n";
 				//os.write(line, line.length);
 				//os.write(data, data.length);
-				this.filterAndWrite(os, line+data, info, filter);
+				this.filterAndWrite(os, line, info, filter);
+				bodyText = data;
 				data = "";
 			} else {
-			//now in the message body
+				//now in the message body
+				bodyText += data;
 				data = "";
 			}
 		}
-
+		this.filterAndWrite(os, bodyText, info, true);
 		//flush attachments filter
 		if (filter) {
 			this.filterAndWrite(os, "", info, filter);
@@ -734,8 +735,6 @@ var gsend_to_wunderlist = {
 		return ret;
 	},
 
-
-	
 	getThunderLink: function(message) {
 		return "thunderlink://" + "messageid=" + message.messageId;
 	},
@@ -767,12 +766,7 @@ var gsend_to_wunderlist = {
 				} else {
 					cols = cols + name.length + 2; //2 means , and space
 				}
-				
-//				if (provideLink) {
-//					addrs.push(htmlBR + '<a href="' + 'mailto:' + addrVal + '">' + this.escapeHTMLMetaCharacter(name) + '</a>');
-//				} else {
 					addrs.push(htmlBR + name);
-//				}
 			}
 		}
 		return addrs.join(", ");
@@ -790,7 +784,7 @@ var gsend_to_wunderlist = {
 		});
 	},
 	
-	expandMetaCharacters: function(str, msgHdr, isTitle, fwdAtts, delAtts, escape) {
+	expandMetaCharacters: function(str, msgHdr, isTitle) {
 		var sub = msgHdr.mime2DecodedSubject;
 		if (isTitle) {
 			if (nsPreferences.getBoolPref("extensions.send_to_wunderlist.rm_mltag",false)) {
@@ -804,19 +798,11 @@ var gsend_to_wunderlist = {
 		}
 
 		var author = this.createAddressesString(msgHdr.mime2DecodedAuthor, true, false);
-		//var authorName = this.hdrParser.extractHeaderAddressName(author);
 		//if (authorName.indexOf("@")) authorName = authorName.split("@")[0]; //only email address. use account name to avoid conflict with notebook
 		var authorName = this.createAddressesString(msgHdr.mime2DecodedAuthor, false, false);
-
-
-		//var toList = this.decode(msgHdr.recipients);
 		var toList = this.createAddressesString(this.decode(msgHdr.recipients), true, !isTitle);
-		//var ccList = this.decode(msgHdr.ccList);
 		var ccList = this.createAddressesString(this.decode(msgHdr.ccList), true, !isTitle);
-
-		//var toNames = this.createAddressNamesStr(toList);
 		var toNames = this.createAddressesString(this.decode(msgHdr.recipients), false, !isTitle);
-		//var ccNames = this.createAddressNamesStr(ccList);
 		var ccNames = this.createAddressesString(this.decode(msgHdr.ccList), false, !isTitle);
 		
 		var folderName = msgHdr.folder.prettiestName;
@@ -837,17 +823,6 @@ var gsend_to_wunderlist = {
 		
 		var accountName = this.accountName;
 		
-		if (escape) {
-			sub = this.escapeHTMLMetaCharacter(sub);
-			folderName = this.escapeHTMLMetaCharacter(folderName);
-			accountName = this.escapeHTMLMetaCharacter(accountName);
-			//author = this.escapeHTMLMetaCharacter(author);
-			//toList = this.escapeHTMLMetaCharacter(toList);
-			//ccList = this.escapeHTMLMetaCharacter(ccList);
-			//authorName = this.escapeHTMLMetaCharacter(authorName);
-			//toNames = this.escapeHTMLMetaCharacter(toNames);
-			//ccNames = this.escapeHTMLMetaCharacter(ccNames);
-		}
 		str = str.replace(/\%S/gm, sub);
 		str = str.replace(/\%F/gm, folderName);
 		str = str.replace(/\%N/gm, accountName);
@@ -870,24 +845,6 @@ var gsend_to_wunderlist = {
 		
 		str = str.replace(/\%L/gm, this.getThunderLink(msgHdr));
 
-		var name = "";
-		var cols = 0;
-		var atts = [];
-		for (name in delAtts) {
-			var att = delAtts[name];
-			if (att && att.del) {
-				var htmlBR = "";
-				if (this.wrapLength > 0 && cols + name.length > this.wrapLength) { //wrap
-					htmlBR = "<BR>";
-					cols = name.length;
-				} else {
-					cols = cols + name.length + 2; //2 means , and space
-				}
-				atts.push(htmlBR + this.escapeHTMLMetaCharacter(name));
-			}
-		}
-		var attsStr = atts.join(", ");
-		str = str.replace(/\%R/gm, attsStr);
 		return str;
 	},
 
