@@ -45,7 +45,6 @@ var gsend_to_wunderlist = {
 		this.setShortcutKey(true); //for Forward with reminder
 		this.setShortcutKey(false, true); //for wunderlist
 		this.changePopupMenuState();
-		
 		var that = this;
 	},
 
@@ -695,6 +694,46 @@ var gsend_to_wunderlist = {
 
 	base64ToUtf8: function(str) {
 		return decodeURIComponent(escape(window.atob(str)));
+	},
+
+	getMessageBody: function(folder) {
+		var offset = new Object();
+		var messageSize = new Object();
+		try{
+			is = folder.getOfflineFileStream(hdr.messageKey,offset,messageSize);
+
+			var factory = Components.classes["@mozilla.org/scriptableinputstream;1"];
+
+			var sis = factory.createInstance(nsIScriptableInputStream);
+			sis.init(is);
+
+			bodyAndHdr = sis.read(hdr.messageSize-10);
+
+//the -10 gets rid of this really weird "From - Tue " thing
+// (which is an exact quote). The reason why it shows "From - Tue" is
+//that it's actually part of the next message's header, and in fact,
+//the stream contains all of the messages in the folder.
+//it's as yet unclear why hdr.messageSize should be off by 10, or why
+//the out parameter to is (which is also called messageSize) always
+//shows up as 0.
+
+
+		}catch(e){
+			alert("message: "+e.message);
+		}
+
+
+
+	},
+
+
+
+
+	dumpTrace: function () {
+		var err = new Error();
+		dump('***************************** Trace Begin ***************************************')
+		dump("\nStack trace:\n" + err.stack + "\n\n");
+		dump('***************************** Trace End *****************************************')
 	}
 
 };
