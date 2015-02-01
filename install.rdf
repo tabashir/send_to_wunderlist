@@ -4,9 +4,9 @@
 		xmlns:em="http://www.mozilla.org/2004/em-rdf#">
 
 	<Description about="urn:mozilla:install-manifest">
-		<em:name>send_to_wunderlist</em:name>
+		<em:name>Send to Wunderlist</em:name>
 		<em:version>0.1.00</em:version>
-		<em:description>Forward email to Wunderlist</em:description>
+		<em:description>Make Wunderlist todos from Thunderbird email</em:description>
 		<em:creator>mozilla.jez@mckinley.biz</em:creator>
 		<em:id>wunderlist-extension@mckinley.biz</em:id>
 		<em:type>2</em:type>
@@ -21,6 +21,6 @@
 		
 		<em:iconURL></em:iconURL>
 		<em:optionsURL>chrome://send_to_wunderlist/content/settings.xul</em:optionsURL>
-		<em:homepageURL>http://www.mckinley.biz</em:homepageURL>
+		<em:homepageURL>https://github.com/tabashir/send_to_wunderlist</em:homepageURL>
 	</Description>
 </RDF>
