@@ -24,6 +24,7 @@ var gsend_to_wunderlist = {
 	filterAttachWS: {},
 	wrapLength: 0,
 	requests: [],
+	newLineString: '\r\n',
 	
 	init: function() {
 		this.mimeConverter = Components.classes["@mozilla.org/messenger/mimeconverter;1"].getService(Components.interfaces.nsIMimeConverter);
@@ -221,9 +222,9 @@ var gsend_to_wunderlist = {
 			var bodyText = aMimeMessage.coerceBodyToPlaintext(aMsgHdr.folder);
 			var thunderlinkText = ""
 				if (insertThunderlink) {
-					thunderlinkText += '\r\n';
+					thunderlinkText += that.newLineString;
 					thunderlinkText += (thunderlinkHack) ? that.getThunderLinkClickableHack(msgHdr) : that.getThunderLink(msgHdr);
-					thunderlinkText += '\r\n';
+					thunderlinkText += that.newLineString + that.newLineString;
 				}
 			var info = {
 				msgHdr: msgHdr,
@@ -349,12 +350,12 @@ var gsend_to_wunderlist = {
 	createHeaderString: function() {
 		var id = (new Date()).valueOf();
 		var messageId = id + "." + this.msgCompFields.from;
-		var str = "Message-ID: " + messageId + "\r\n"
-							+ "Date: " + (new Date()).toString() + "\r\n"
-							+ "From: " + this.msgCompFields.from + "\r\n"
+		var str = "Message-ID: " + messageId + this.newLineString
+							+ "Date: " + (new Date()).toString() + this.newLineString
+							+ "From: " + this.msgCompFields.from + this.newLineString
 							+ "MIME-Version: 1.0\r\n"
-							+ "To: " + this.msgCompFields.to + "\r\n"
-							+ "Subject: " + this.msgCompFields.subject + "\r\n";
+							+ "To: " + this.msgCompFields.to + this.newLineString
+							+ "Subject: " + this.msgCompFields.subject + this.newLineString;
 							+ this.plainMessageBodyHeader();
 		return str;
 	},
@@ -362,16 +363,17 @@ var gsend_to_wunderlist = {
 	plainMessageBodyHeader: function() {
 		return 'Content-Type: text/plain; charset=utf-8; format=flowed\r\n'
 							+ 'Content-Transfer-Encoding: 7bit\r\n'
-							+ "\r\n";
+							+ this.newLineString;
 	},
 
 	htmlMessageBodyHeader: function(id) {
 		var boundary = "--------------ENF" + id;
 		return 'Content-Type: text/plain; charset=utf-8; format=flowed\r\n'
 			+ "Content-Type: multipart/mixed;\r\n"
-			+ ' boundary="' + boundary + '"' + "\r\n"
-			+ "\r\n"
-			+ "This is a multi-part message in MIME format.\r\n";
+			+ ' boundary="' + boundary + '"' + this.newLineString
+			+ this.newLineString
+			+ "This is a multi-part message in MIME format."
+			+ this.newLineString;
 	},
 	
 	composeAsInline: function(info) {
