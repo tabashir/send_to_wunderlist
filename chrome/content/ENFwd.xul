@@ -14,8 +14,7 @@
   </broadcasterset>
   
   <keyset id="mailKeys">
- 	<!-- For wunderlist -->
-    <key id="ENF:key_FwdMsgsWunderList" disabled="false"
+    <key id="ENF:key_FwdMsgs" disabled="false"
 	  oncommand="gsend_to_wunderlist.forwardSelectedMsgsWunderList(event, true)"/>
   </keyset>
   

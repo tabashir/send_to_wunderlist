@@ -1,0 +1,24 @@
+Date: Wed, 24 Dec 2014 22:17:10 +0000
+From: mickey@disney.com
+To: me@wunderlist.com
+Subject: Something went wrong [ thunderlink://messageid=md5:cW9imyhkmUDTXkJaD3UK3A==
+ ]  
+Mime-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="--==_mimepart_549b3b64f031c_7d0726b23d8128470";
+ charset=UTF-8
+Content-Transfer-Encoding: 7bit
+Feedback-ID: us-east-1.aGVsbG9Ad3VuZGVybGlzdC5jb20=:AmazonSES
+
+
+----==_mimepart_549b3b64f031c_7d0726b23d8128470
+Content-Type: text/plain;
+ charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+Have we met before?
+
+We don't recognize your email. Please make sure to send or
+forward emails to me@wunderlist.com ( me@wunderlist.com ) from
+the address that is associated with your Wunderlist account.
+

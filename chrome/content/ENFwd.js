@@ -42,20 +42,19 @@ var gsend_to_wunderlist = {
 					.getService(Components.interfaces.nsISmtpService);
 
 		this.setShortcutKey(); //for Normal Forward
-		this.setShortcutKey(true); //for Forward with reminder
-		this.setShortcutKey(false, true); //for wunderlist
+//		this.setShortcutKey(true); //for Forward with reminder
 		this.changePopupMenuState();
 		var that = this;
 	},
 
-	setShortcutKey: function(rem, wunderlist) {
-		var prefix = rem ? "rem_" : "";
+	setShortcutKey: function(altKey) {
+		var prefix = altKey ? "rem_" : "";
 		var app = "wunderlist.";
 		var keyElem = null;
-		if (rem) {
-			keyElem = wunderlist ? document.getElementById("ENF:key_FwdMsgsRemWunderList") : document.getElementById("ENF:key_FwdMsgsRem");
+		if (altKey) {
+			keyElem = document.getElementById("ENF:key_FwdMsgsRem");
 		} else {
-			keyElem = wunderlist ? document.getElementById("ENF:key_FwdMsgsWunderList") : document.getElementById("ENF:key_FwdMsgs");
+			keyElem = document.getElementById("ENF:key_FwdMsgs");
 		}
 
 		var keyPrefix = "extensions.send_to_wunderlist." + prefix;
@@ -127,22 +126,13 @@ var gsend_to_wunderlist = {
 		}
 		
 		var remInfo = {date: "", enable: false};
-
-		var req = {
-			account: null,
-			id: null,
-			noteInfo: null,
-			isGmailIMAP: false,
-			wunderlist: wunderlist,
-			totalMsgs: 0
-		};
-
-		req.noteInfo = this.createNoteInfo(gFolderDisplay.selectedMessages, pressShift, remInfo, wunderlist);
+		var that = this;
+		this.createNoteInfo(gFolderDisplay.selectedMessages, pressShift, remInfo, function(req){
+			that.registerRequest(req);
+			that.doNextRequest();
+		});
 		
-		req.totalMsgs = req.noteInfo.length;
 
-		this.registerRequest(req);
-		this.doNextRequest();
 	},
 	
 	fillAccountInfo: function(server, req) {
@@ -220,44 +210,66 @@ var gsend_to_wunderlist = {
 			this.doNextRequest();
 		}
 	},
-	
-	createNoteInfo: function(selectedMsgs, append, reminder) {
-		var noteInfo = [];
-		var wunderlist = true;
+
+
+	getNoteInfoForMessage: function(msgHdr, append, reminder, callback) {
+		var defaultTags = "";
+		var tags = [];
 		var titlePref = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.title", "%S");
 		var defaultTagsPref = "";
+		if (defaultTagsPref) {
 
-		var len = selectedMsgs.length;
+			defaultTags = this.expandMetaCharacters(defaultTagsPref, msgHdr, true);
+			tags = tags.concat(defaultTags.split(/\s*,\s*/));
+		}
+		var title = this.expandMetaCharacters(titlePref, msgHdr, true);
 
-		for (var i=0; i<len; i++) {
-			var msgHdr = selectedMsgs[i];
-			var defaultTags = "";
-//			var tags = nsPreferences.getBoolPref("extensions.send_to_wunderlist.add_msg_tags", false) ? this.getTagsForMsg(msgHdr) : [];
-			var tags = [];
-			if (defaultTagsPref) {
+		MsgHdrToMimeMessage(msgHdr, null, function (aMsgHdr, aMimeMessage) {
+			var bodyText = aMimeMessage.coerceBodyToPlaintext(aMsgHdr.folder);
 
-				defaultTags = this.expandMetaCharacters(defaultTagsPref, msgHdr, true);
-				tags = tags.concat(defaultTags.split(/\s*,\s*/));
-			}
-			
-			var title = this.expandMetaCharacters(titlePref, msgHdr, true);
 			var info = {
 				msgHdr: msgHdr,
 				title: title,
 				tags: tags,
 				append: append,
-				reminder: reminder.enable,
-				reminderDate: reminder.date,
+				reminder: reminder,
 				delAttachments: [],
 				selection: "",
-				wunderlist: wunderlist,
-				canceled: false
+				wunderlist: true,
+				canceled: false,
+				body: bodyText
 			};
-			
-			noteInfo.push(info);
+			return callback(info)
+		}, true);
+	},
+
+	collectNoteInfoForMessages : function (selectedMsgs, append, reminder, callback) {
+		var len = selectedMsgs.length;
+		var noteInfo = [];
+		var returnNow = false;
+		for (var i = 0; i < len; i++) {
+
+			returnNow = ( i == len - 1 );
+			this.getNoteInfoForMessage(selectedMsgs[i], append, reminder, function (info) {
+				noteInfo.push(info);
+				if (returnNow) return callback(noteInfo);
+			});
 		}
-		
-		return noteInfo;
+	},
+
+	createNoteInfo : function (selectedMsgs, append, reminder, callback) {
+
+		this.collectNoteInfoForMessages(selectedMsgs, append, reminder, function (noteInfo) {
+			var req = {
+				account: null,
+				id: null,
+				noteInfo: noteInfo,
+				isGmailIMAP: false,
+				wunderlist: false,
+				totalMsgs: noteInfo.length
+			};
+			return callback(req);
+		})
 	},
 	
 	isGmailSMTPServer: function(id) {
@@ -316,7 +328,7 @@ var gsend_to_wunderlist = {
 				tagName = this.tagService.getTagForKey(key);
 			} catch(e) {
 				tagName = null;
-				dump("Unknow tag key: " + key + "\n");
+				dump("Unknown tag key: " + key + "\n");
 			}
 			if (tagName && ignoredTags.indexOf(key) < 0) {
 				tags.push(tagName);
@@ -349,22 +361,31 @@ var gsend_to_wunderlist = {
 	createHeaderString: function() {
 		var id = (new Date()).valueOf();
 		var messageId = id + "." + this.msgCompFields.from
-		var boundary = "--------------ENF" + id;
 		var str = "Message-ID: " + messageId + "\r\n"
 							+ "Date: " + (new Date()).toString() + "\r\n"
 							+ "From: " + this.msgCompFields.from + "\r\n"
 							+ "MIME-Version: 1.0\r\n"
 							+ "To: " + this.msgCompFields.to + "\r\n"
 							+ "Subject: " + this.msgCompFields.subject + "\r\n"
-							+ "Content-Type: multipart/mixed;\r\n"
-							+ ' boundary="' + boundary + '"' + "\r\n"
-							+ "\r\n"
-							+ "This is a multi-part message in MIME format.\r\n"
-		return {
-			headerString: str,
-			boundary: boundary,
-			length: str.length
-		};
+							+ this.plainMessageBodyHeader();
+		return str;
+	},
+
+	plainMessageBodyHeader: function() {
+		var str = 'Content-Type: text/plain; charset=utf-8; format=flowed\r\n'
+							+ 'Content-Transfer-Encoding: 7bit\r\n'
+							+ "\r\n";
+		return str;
+	},
+
+	htmlMessageBodyHeader: function(id) {
+		var boundary = "--------------ENF" + id;
+		var str = 'Content-Type: text/plain; charset=utf-8; format=flowed\r\n'
+			+ "Content-Type: multipart/mixed;\r\n"
+			+ ' boundary="' + boundary + '"' + "\r\n"
+			+ "\r\n"
+			+ "This is a multi-part message in MIME format.\r\n";
+		return str;
 	},
 	
 	composeAsInline: function(info) {
@@ -384,7 +405,9 @@ var gsend_to_wunderlist = {
 		os.init(msgFile, 2, 0x200, false); // open as "write only"
 		
 		var messageText = this.createHeaderString();
-		os.write(messageText.headerString, messageText.length);
+		messageText += info.body;
+		os.write(messageText, messageText.length);
+		this.dumpTrace(messageText);
 
 		messageStream.close();
 		inputStream.close();
@@ -695,39 +718,6 @@ var gsend_to_wunderlist = {
 	base64ToUtf8: function(str) {
 		return decodeURIComponent(escape(window.atob(str)));
 	},
-
-	getMessageBody: function(folder) {
-		var offset = new Object();
-		var messageSize = new Object();
-		try{
-			is = folder.getOfflineFileStream(hdr.messageKey,offset,messageSize);
-
-			var factory = Components.classes["@mozilla.org/scriptableinputstream;1"];
-
-			var sis = factory.createInstance(nsIScriptableInputStream);
-			sis.init(is);
-
-			bodyAndHdr = sis.read(hdr.messageSize-10);
-
-//the -10 gets rid of this really weird "From - Tue " thing
-// (which is an exact quote). The reason why it shows "From - Tue" is
-//that it's actually part of the next message's header, and in fact,
-//the stream contains all of the messages in the folder.
-//it's as yet unclear why hdr.messageSize should be off by 10, or why
-//the out parameter to is (which is also called messageSize) always
-//shows up as 0.
-
-
-		}catch(e){
-			alert("message: "+e.message);
-		}
-
-
-
-	},
-
-
-
 
 	dumpTrace: function () {
 		var err = new Error();
