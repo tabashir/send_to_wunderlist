@@ -3,6 +3,7 @@
 
 <prefwindow
 	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+    xmlns:html="http://www.w3.org/1999/xhtml"
 	buttons="accept, cancel"
   title="send_to_wunderlist Preferences"
   id="send_to_wunderlist-settings"
@@ -21,6 +22,8 @@
 			<preference id="pref_wunderlist.mark_as_forwarded" name="extensions.send_to_wunderlist.mark_as_forwarded" type="bool"/>
 			<preference id="pref_wunderlist.rm_re_fwd" name="extensions.send_to_wunderlist.rm_re_fwd" type="bool"/>
 			<preference id="pref_wunderlist.rm_mltag" name="extensions.send_to_wunderlist.rm_mltag" type="bool"/>
+            <preference id="pref_wunderlist.insert_thunderlink" name="extensions.send_to_wunderlist.insert_thunderlink" type="bool"/>
+            <preference id="pref_wunderlist.thunderlink_prefix" name="extensions.send_to_wunderlist.thunderlink_prefix" type="unichar"/>
 			<preference id="pref_wunderlist.title" name="extensions.send_to_wunderlist.title" type="unichar"/>
 			<preference id="pref_wunderlist.enable_skey" name="extensions.send_to_wunderlist.enable_skey" type="bool"/>
 			<preference id="pref_wunderlist.skey" name="extensions.send_to_wunderlist.skey" type="unichar"/>
@@ -32,10 +35,10 @@
 		<tabbox>
 		<tabs>
 		  <tab id="gentab" label="General"/>
-		  <tab id="titletab" label="Subject Line"/>
+		  <tab id="titletab" label="Formatting"/>
 		  <tab id="skeytab" label="Keyboard Shortcut"/>
 		  <tab id="formattips" label="Formatting Tips"/>
-		  
+
 		</tabs>
 		<tabpanels>
 		  <!-- General -->
@@ -89,6 +92,16 @@
 								<checkbox id="STWRmMLTag" label="Remove [...] and (...) in front of subject"
 										preference="pref_wunderlist.rm_mltag" />
 							</row>
+                            <row align="center">
+                                <spacer/>
+                                <checkbox id="STWInsTL" label="Insert thunderlink at top of message body"
+                                          preference="pref_wunderlist.insert_thunderlink" />
+                            </row>
+                            <row align="center">
+                                <label value="Thunderlink prefix:"/>
+                                <textbox id="STWTLPrefix" value="thunderlink://" flex="1"
+                                         preference="pref_wunderlist.thunderlink_prefix" />
+                            </row>
 						</rows>
 					</grid>
 			</tabpanel>
@@ -198,11 +211,47 @@
 						<row>
 							<spacer style="width:2.0em;"/>
 							<label value="%L"/>
-							<label value="Thunderlink (makes clickable links to the message)"/>
+							<label value="Thunderlink"/>
 						</row>
 					</rows>
 				</grid>
-			</tabpanel>
+                <grid>
+                    <rows>
+                        <row>
+                            <label value=""/>
+                        </row>
+                        <row>
+                            <label value="Thunderlinks:"/>
+                        </row>
+                        <row>
+                            <label value=""/>
+                        </row>
+                        <row>
+                            <label value="Makes a link to the message which can be clicked on in an external program"/>
+                        </row>
+                        <row>
+                            <html:a href="https://addons.mozilla.org/en-US/thunderbird/addon/thunderlink/">
+                                https://addons.mozilla.org/en-US/thunderbird/addon/thunderlink
+                            </html:a>
+                        </row>
+                        <row>
+                            <html:p>A normal thunderlink is in the format:
+                                <html:br></html:br>
+                                thunderlink://messageidstring
+                            </html:p>
+                        </row>
+                        <row>
+                            <html:p>Because in wunderlist, this is not clickable (even with Thunderlinkspotter or
+                                TextLink)
+                            </html:p>
+                        </row>
+                        <row>
+                            <html:p>see documentation for making it clickable</html:p>
+                        </row>
+                    </rows>
+                </grid>
+
+            </tabpanel>
 		</tabpanels>
 		</tabbox>
 	</prefpane>

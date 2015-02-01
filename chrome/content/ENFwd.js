@@ -121,7 +121,10 @@ var gsend_to_wunderlist = {
 		
 		var remInfo = {date: "", enable: false};
 		var that = this;
-		this.createNoteInfo(gFolderDisplay.selectedMessages, pressShift, remInfo, function(req){
+		var thunderLinkPrefix = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.thunderlink_prefix", "thunderlink://");
+		var includeThunderlinkInBody = nsPreferences.getBoolPref("extensions.send_to_wunderlist.insert_thunderlink", false);
+
+		this.createNoteInfo(gFolderDisplay.selectedMessages, includeThunderlinkInBody, thunderLinkPrefix, function(req){
 			that.registerRequest(req);
 			that.doNextRequest();
 		});
@@ -206,7 +209,7 @@ var gsend_to_wunderlist = {
 	},
 
 
-	getNoteInfoForMessage: function(msgHdr, insertThunderlink, thunderlinkHack, callback) {
+	getNoteInfoForMessage: function(msgHdr, insertThunderlink, thunderlinkPrefix, callback) {
 		var defaultTags = "";
 		var tags = [];
 		var titlePref = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.title", "%S");
@@ -222,8 +225,7 @@ var gsend_to_wunderlist = {
 			var bodyText = aMimeMessage.coerceBodyToPlaintext(aMsgHdr.folder);
 			var thunderlinkText = ""
 				if (insertThunderlink) {
-					thunderlinkText += that.newLineString;
-					thunderlinkText += (thunderlinkHack) ? that.getThunderLinkClickableHack(msgHdr) : that.getThunderLink(msgHdr);
+					thunderlinkText += that.getThunderLink(thunderlinkPrefix, msgHdr);
 					thunderlinkText += that.newLineString + that.newLineString;
 				}
 			var info = {
@@ -240,23 +242,23 @@ var gsend_to_wunderlist = {
 		}, true);
 	},
 
-	collectNoteInfoForMessages : function (selectedMsgs, insertThunderlink, thunderlinkHack, callback) {
+	collectNoteInfoForMessages : function (selectedMsgs, insertThunderlink, thunderlinkPrefix, callback) {
 		var len = selectedMsgs.length;
 		var noteInfo = [];
 		var returnNow = false;
 		for (var i = 0; i < len; i++) {
 
 			returnNow = ( i == len - 1 );
-			this.getNoteInfoForMessage(selectedMsgs[i], insertThunderlink, thunderlinkHack, function (info) {
+			this.getNoteInfoForMessage(selectedMsgs[i], insertThunderlink, thunderlinkPrefix, function (info) {
 				noteInfo.push(info);
 				if (returnNow) return callback(noteInfo);
 			});
 		}
 	},
 
-	createNoteInfo : function (selectedMsgs, insertThunderlink, thunderlinkHack, callback) {
+	createNoteInfo : function (selectedMsgs, insertThunderlink, thunderlinkPrefix, callback) {
 
-		this.collectNoteInfoForMessages(selectedMsgs, true, true, function (noteInfo) {
+		this.collectNoteInfoForMessages(selectedMsgs, insertThunderlink, thunderlinkPrefix, function (noteInfo) {
 			var req = {
 				account: null,
 				id: null,
@@ -350,26 +352,25 @@ var gsend_to_wunderlist = {
 	createHeaderString: function() {
 		var id = (new Date()).valueOf();
 		var messageId = id + "." + this.msgCompFields.from;
-		var str = "Message-ID: " + messageId + this.newLineString
+		return "Message-ID: " + messageId + this.newLineString
 							+ "Date: " + (new Date()).toString() + this.newLineString
 							+ "From: " + this.msgCompFields.from + this.newLineString
-							+ "MIME-Version: 1.0\r\n"
+							+ "MIME-Version: 1.0" + this.newLineString
 							+ "To: " + this.msgCompFields.to + this.newLineString
-							+ "Subject: " + this.msgCompFields.subject + this.newLineString;
+							+ "Subject: " + this.msgCompFields.subject + this.newLineString
 							+ this.plainMessageBodyHeader();
-		return str;
 	},
 
 	plainMessageBodyHeader: function() {
-		return 'Content-Type: text/plain; charset=utf-8; format=flowed\r\n'
-							+ 'Content-Transfer-Encoding: 7bit\r\n'
+		return 'Content-Type: text/plain; charset=utf-8; format=flowed' + this.newLineString
+							+ 'Content-Transfer-Encoding: 7bit' + this.newLineString
 							+ this.newLineString;
 	},
 
 	htmlMessageBodyHeader: function(id) {
 		var boundary = "--------------ENF" + id;
-		return 'Content-Type: text/plain; charset=utf-8; format=flowed\r\n'
-			+ "Content-Type: multipart/mixed;\r\n"
+		return 'Content-Type: text/plain; charset=utf-8; format=flowed' + this.newLineString
+			+ "Content-Type: multipart/mixed;" + this.newLineString
 			+ ' boundary="' + boundary + '"' + this.newLineString
 			+ this.newLineString
 			+ "This is a multi-part message in MIME format."
@@ -532,13 +533,10 @@ var gsend_to_wunderlist = {
 		}
 	},
 
-	getThunderLink: function(message) {
-		return "thunderlink://" + "messageid=" + message.messageId;
+	getThunderLink: function(prefix, message) {
+		return prefix + "messageid=" + message.messageId;
 	},
 
-	getThunderLinkClickableHack: function(message) {
-		return "http://thunderlink.me/" + "messageid=" + message.messageId;
-	},
 
 	createAddressesString: function(addrsStr, fullName, wrap) {
 
@@ -642,8 +640,9 @@ var gsend_to_wunderlist = {
 		str = str.replace(/\%h/gm, h);
 		str = str.replace(/\%m/gm, m);
 		str = str.replace(/\%s/gm, s);
-		
-		str = str.replace(/\%L/gm, this.getThunderLink(msgHdr));
+
+		var thunderLinkPrefix = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.thunderlink_prefix", "thunderlink://");
+		str = str.replace(/\%L/gm, this.getThunderLink(thunderLinkPrefix, msgHdr));
 
 		return str;
 	},
@@ -708,8 +707,10 @@ var gsend_to_wunderlist = {
 		return decodeURIComponent(escape(window.atob(str)));
 	},
 
-	dumpTrace: function () {
+	dumpTrace: function (objectToDump) {
 		var err = new Error();
+		dump('***************************** Object Begin ***************************************')
+		dump(objectToDump);
 		dump('***************************** Trace Begin ***************************************')
 		dump("\nStack trace:\n" + err.stack + "\n\n");
 		dump('***************************** Trace End *****************************************')
