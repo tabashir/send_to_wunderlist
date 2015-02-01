@@ -26,20 +26,13 @@ var gsend_to_wunderlist = {
 	requests: [],
 	
 	init: function() {
-		this.mimeConverter = Components.classes["@mozilla.org/messenger/mimeconverter;1"]
-					.getService(Components.interfaces.nsIMimeConverter);
-		this.dirService =  Components.classes["@mozilla.org/file/directory_service;1"]
-					.getService(Components.interfaces.nsIProperties);
-		this.tagService = Components.classes["@mozilla.org/messenger/tagservice;1"]
-	 				.getService(Components.interfaces.nsIMsgTagService);
-	  this.accountManager = Components.classes["@mozilla.org/messenger/account-manager;1"]
-					.getService(Components.interfaces.nsIMsgAccountManager);
-		this.hdrParser = Components.classes["@mozilla.org/messenger/headerparser;1"]
-					.getService(Components.interfaces.nsIMsgHeaderParser);
-		this.mailSession = Components.classes["@mozilla.org/messenger/services/session;1"]
-	      	.getService(Components.interfaces.nsIMsgMailSession);
-		this.smtpService = Components.classes["@mozilla.org/messengercompose/smtp;1"]
-					.getService(Components.interfaces.nsISmtpService);
+		this.mimeConverter = Components.classes["@mozilla.org/messenger/mimeconverter;1"].getService(Components.interfaces.nsIMimeConverter);
+		this.dirService =  Components.classes["@mozilla.org/file/directory_service;1"].getService(Components.interfaces.nsIProperties);
+		this.tagService = Components.classes["@mozilla.org/messenger/tagservice;1"].getService(Components.interfaces.nsIMsgTagService);
+	  this.accountManager = Components.classes["@mozilla.org/messenger/account-manager;1"].getService(Components.interfaces.nsIMsgAccountManager);
+		this.hdrParser = Components.classes["@mozilla.org/messenger/headerparser;1"].getService(Components.interfaces.nsIMsgHeaderParser);
+		this.mailSession = Components.classes["@mozilla.org/messenger/services/session;1"].getService(Components.interfaces.nsIMsgMailSession);
+		this.smtpService = Components.classes["@mozilla.org/messengercompose/smtp;1"].getService(Components.interfaces.nsISmtpService);
 
 		this.setShortcutKey(); //for Normal Forward
 //		this.setShortcutKey(true); //for Forward with reminder
@@ -212,7 +205,7 @@ var gsend_to_wunderlist = {
 	},
 
 
-	getNoteInfoForMessage: function(msgHdr, append, reminder, callback) {
+	getNoteInfoForMessage: function(msgHdr, insertThunderlink, thunderlinkHack, callback) {
 		var defaultTags = "";
 		var tags = [];
 		var titlePref = nsPreferences.copyUnicharPref("extensions.send_to_wunderlist.title", "%S");
@@ -223,19 +216,22 @@ var gsend_to_wunderlist = {
 			tags = tags.concat(defaultTags.split(/\s*,\s*/));
 		}
 		var title = this.expandMetaCharacters(titlePref, msgHdr, true);
-
+		var that = this;
 		MsgHdrToMimeMessage(msgHdr, null, function (aMsgHdr, aMimeMessage) {
 			var bodyText = aMimeMessage.coerceBodyToPlaintext(aMsgHdr.folder);
-
+			var thunderlinkText = ""
+				if (insertThunderlink) {
+					thunderlinkText += '\r\n';
+					thunderlinkText += (thunderlinkHack) ? that.getThunderLinkClickableHack(msgHdr) : that.getThunderLink(msgHdr);
+					thunderlinkText += '\r\n';
+				}
 			var info = {
 				msgHdr: msgHdr,
 				title: title,
 				tags: tags,
-				append: append,
-				reminder: reminder,
+				thunderlinkText: thunderlinkText,
 				delAttachments: [],
 				selection: "",
-				wunderlist: true,
 				canceled: false,
 				body: bodyText
 			};
@@ -243,29 +239,28 @@ var gsend_to_wunderlist = {
 		}, true);
 	},
 
-	collectNoteInfoForMessages : function (selectedMsgs, append, reminder, callback) {
+	collectNoteInfoForMessages : function (selectedMsgs, insertThunderlink, thunderlinkHack, callback) {
 		var len = selectedMsgs.length;
 		var noteInfo = [];
 		var returnNow = false;
 		for (var i = 0; i < len; i++) {
 
 			returnNow = ( i == len - 1 );
-			this.getNoteInfoForMessage(selectedMsgs[i], append, reminder, function (info) {
+			this.getNoteInfoForMessage(selectedMsgs[i], insertThunderlink, thunderlinkHack, function (info) {
 				noteInfo.push(info);
 				if (returnNow) return callback(noteInfo);
 			});
 		}
 	},
 
-	createNoteInfo : function (selectedMsgs, append, reminder, callback) {
+	createNoteInfo : function (selectedMsgs, insertThunderlink, thunderlinkHack, callback) {
 
-		this.collectNoteInfoForMessages(selectedMsgs, append, reminder, function (noteInfo) {
+		this.collectNoteInfoForMessages(selectedMsgs, true, true, function (noteInfo) {
 			var req = {
 				account: null,
 				id: null,
 				noteInfo: noteInfo,
 				isGmailIMAP: false,
-				wunderlist: false,
 				totalMsgs: noteInfo.length
 			};
 			return callback(req);
@@ -292,14 +287,7 @@ var gsend_to_wunderlist = {
 		}
 
 		var tagsStr = info.tags && info.tags.length > 0 ? this.getTagsString(info.tags) : "";
-		var remStr = info.reminder ? "!" + info.reminderDate : ""
-		
-		var subject = info.title;
-		if (info.append) {
-			subject = subject + " " + "+";
-		} else {
-			subject = subject + " " + remStr + " " + tagsStr;
-		}
+		var subject = info.title + " " + tagsStr;
 
 		//this.msgCompFields.subject = this.encode(subject, 9, 72, msgHdr.Charset);
 		//force UTF-8 encoding since added characters becomes ??? if msgHdr.Charset does not support it.
@@ -360,32 +348,30 @@ var gsend_to_wunderlist = {
 
 	createHeaderString: function() {
 		var id = (new Date()).valueOf();
-		var messageId = id + "." + this.msgCompFields.from
+		var messageId = id + "." + this.msgCompFields.from;
 		var str = "Message-ID: " + messageId + "\r\n"
 							+ "Date: " + (new Date()).toString() + "\r\n"
 							+ "From: " + this.msgCompFields.from + "\r\n"
 							+ "MIME-Version: 1.0\r\n"
 							+ "To: " + this.msgCompFields.to + "\r\n"
-							+ "Subject: " + this.msgCompFields.subject + "\r\n"
+							+ "Subject: " + this.msgCompFields.subject + "\r\n";
 							+ this.plainMessageBodyHeader();
 		return str;
 	},
 
 	plainMessageBodyHeader: function() {
-		var str = 'Content-Type: text/plain; charset=utf-8; format=flowed\r\n'
+		return 'Content-Type: text/plain; charset=utf-8; format=flowed\r\n'
 							+ 'Content-Transfer-Encoding: 7bit\r\n'
 							+ "\r\n";
-		return str;
 	},
 
 	htmlMessageBodyHeader: function(id) {
 		var boundary = "--------------ENF" + id;
-		var str = 'Content-Type: text/plain; charset=utf-8; format=flowed\r\n'
+		return 'Content-Type: text/plain; charset=utf-8; format=flowed\r\n'
 			+ "Content-Type: multipart/mixed;\r\n"
 			+ ' boundary="' + boundary + '"' + "\r\n"
 			+ "\r\n"
 			+ "This is a multi-part message in MIME format.\r\n";
-		return str;
 	},
 	
 	composeAsInline: function(info) {
@@ -394,17 +380,15 @@ var gsend_to_wunderlist = {
 		var msgFile = this.createTempFile();
 
 		var messageService = messenger.messageServiceFromURI(uri);
-		var messageStream = Components.classes["@mozilla.org/network/sync-stream-listener;1"].
-		  createInstance().QueryInterface(Components.interfaces.nsIInputStream);
-		var inputStream = Components.classes["@mozilla.org/scriptableinputstream;1"].
-		  createInstance().QueryInterface(Components.interfaces.nsIScriptableInputStream);
+		var messageStream = Components.classes["@mozilla.org/network/sync-stream-listener;1"].createInstance().QueryInterface(Components.interfaces.nsIInputStream);
+		var inputStream = Components.classes["@mozilla.org/scriptableinputstream;1"].createInstance().QueryInterface(Components.interfaces.nsIScriptableInputStream);
 		inputStream.init(messageStream);
 		messageService.streamMessage(uri, messageStream, msgWindow, null, false, null);
-		var os = Components.classes['@mozilla.org/network/file-output-stream;1'].
-									createInstance(Components.interfaces.nsIFileOutputStream);
+		var os = Components.classes['@mozilla.org/network/file-output-stream;1'].createInstance(Components.interfaces.nsIFileOutputStream);
 		os.init(msgFile, 2, 0x200, false); // open as "write only"
 		
 		var messageText = this.createHeaderString();
+		messageText += info.thunderlinkText;
 		messageText += info.body;
 		os.write(messageText, messageText.length);
 		this.dumpTrace(messageText);
@@ -452,8 +436,7 @@ var gsend_to_wunderlist = {
 					document.getElementById("statusText").setAttribute("label", "Failed to send note.");
 				} else {
 					document.getElementById("statusText").setAttribute("label", "Forwarding to "+ appName + " ... done.");
-					var markFwdPref = info.wunderlist ? "extensions.send_to_wunderlist.mark_as_forwarded" : "extensions.send_to_wunderlist.mark_as_forwarded"
-					if (nsPreferences.getBoolPref(markFwdPref, true)) {
+					if (nsPreferences.getBoolPref("extensions.send_to_wunderlist.mark_as_forwarded", true)) {
 						msgHdr.flags = msgHdr.flags | Components.interfaces.nsMsgMessageFlags.Forwarded;
 					}
 				}
@@ -549,6 +532,10 @@ var gsend_to_wunderlist = {
 
 	getThunderLink: function(message) {
 		return "thunderlink://" + "messageid=" + message.messageId;
+	},
+
+	getThunderLinkClickableHack: function(message) {
+		return "http://thunderlink.me/" + "messageid=" + message.messageId;
 	},
 
 	createAddressesString: function(addrsStr, fullName, wrap) {
