@@ -25,18 +25,12 @@
             <preference id="pref_wunderlist.insert_thunderlink" name="extensions.send_to_wunderlist.insert_thunderlink" type="bool"/>
             <preference id="pref_wunderlist.thunderlink_prefix" name="extensions.send_to_wunderlist.thunderlink_prefix" type="unichar"/>
 			<preference id="pref_wunderlist.title" name="extensions.send_to_wunderlist.title" type="unichar"/>
-			<preference id="pref_wunderlist.enable_skey" name="extensions.send_to_wunderlist.enable_skey" type="bool"/>
-			<preference id="pref_wunderlist.skey" name="extensions.send_to_wunderlist.skey" type="unichar"/>
-			<preference id="pref_wunderlist.skey_alt" name="extensions.send_to_wunderlist.skey_alt" type="bool"/>
-			<preference id="pref_wunderlist.skey_ctrl" name="extensions.send_to_wunderlist.skey_ctrl" type="bool"/>
-			<preference id="pref_wunderlist.skey_meta" name="extensions.send_to_wunderlist.skey_meta" type="bool"/>
 			<preference id="pref_wunderlist.preview_mode" name="extensions.send_to_wunderlist.preview_mode" type="bool"/>
 		</preferences>
 		<tabbox>
 		<tabs>
 		  <tab id="gentab" label="General"/>
 		  <tab id="titletab" label="Formatting"/>
-		  <tab id="skeytab" label="Keyboard Shortcut"/>
 		  <tab id="formattips" label="Formatting Tips"/>
 
 		</tabs>
@@ -106,48 +100,6 @@
 					</grid>
 			</tabpanel>
 			
-			<!-- Shortcut key -->
-		  <tabpanel>
-			<vbox flex="1">
-			  <!-- Normal Forward -->
-			  <groupbox>
-				<caption>
-					<checkbox label="Forward" id="STWSkeyEnable"
-										preference="pref_wunderlist.enable_skey" />
-				</caption>
-				<hbox align="center">
-				  <spacer style="height:0.5em"/>
-				  <hbox align="center">
-					<label value="Key:"/>
-					<groupbox orient="vertical" align="center" style="min-width:8.5em">
-					  <label id="STWSkey" value="" skey="" preference="pref_wunderlist.skey"
-						/>
-					</groupbox>
-					<spacer style="width:1.0em"/>
-					<button id="STWSkeyChangeButton" label="Change"
-					  disabled="false" onclick="gSTWSettings.controlKeyChange(event)"
-					  onkeypress="gSTWSettings.changeKey(event)"
-					  onblur="gSTWSettings.cancelKeyChange(event)"/>
-				  </hbox>
-				  <spacer style="height:1.0em;"/>
-				  <hbox align="center">
-					<label value="Modifier:"/>
-					<spacer style="height:1.0em"/>
-					<checkbox id="STWSkeyAlt" label="Alt"
-					  preference="pref_wunderlist.skey_alt" 
-					  />
-					<checkbox id="STWSkeyCtrl" label="Ctrl"
-					  preference="pref_wunderlist.skey_ctrl" 
-					  />
-					<checkbox id="STWSkeyMeta" label="Meta"
-					  preference="pref_wunderlist.skey_meta" 
-					  />
-				  </hbox>
-				</hbox>
-			  </groupbox>
-				<label value="NOTE: Settings are applied after restart of Thunderbird"/>
-			</vbox>
-		  </tabpanel>
 		  	<!-- Formatting Tips -->
 			<tabpanel orient="vertical">
 				<label value="- Following meta characters are available:"/>

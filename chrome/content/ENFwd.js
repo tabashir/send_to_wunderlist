@@ -35,54 +35,10 @@ var gsend_to_wunderlist = {
 		this.mailSession = Components.classes["@mozilla.org/messenger/services/session;1"].getService(Components.interfaces.nsIMsgMailSession);
 		this.smtpService = Components.classes["@mozilla.org/messengercompose/smtp;1"].getService(Components.interfaces.nsISmtpService);
 
-		this.setShortcutKey(); //for Normal Forward
-//		this.setShortcutKey(true); //for Forward with reminder
 		this.changePopupMenuState();
 		var that = this;
 	},
 
-	setShortcutKey: function(altKey) {
-		var prefix = altKey ? "rem_" : "";
-		var app = "wunderlist.";
-		var keyElem = null;
-		if (altKey) {
-			keyElem = document.getElementById("ENF:key_FwdMsgsRem");
-		} else {
-			keyElem = document.getElementById("ENF:key_FwdMsgs");
-		}
-
-		var keyPrefix = "extensions.send_to_wunderlist." + prefix;
-
-		if (!nsPreferences.getBoolPref(keyPrefix + "enable_skey", false)) {
-			keyElem.setAttribute("disabled", true);
-			return;
-		}
-
-		var skey = nsPreferences.copyUnicharPref(keyPrefix + "skey", "");
-		if (!skey) {
-			keyElem.setAttribute("disabled", true);
-			return;
-		}
-
-		var modifiers = [];
-		if (nsPreferences.getBoolPref(keyPrefix + "skey_ctrl", false)) {
-			modifiers.push("control");
-		}
-
-		if (nsPreferences.getBoolPref(keyPrefix + "skey_alt", false)) {
-			modifiers.push("alt");
-		}
-
-		if (nsPreferences.getBoolPref(keyPrefix + "skey_meta", false)) {
-			modifiers.push("meta");
-		}
-
-		var keyAttr = skey.substring(0,3) == "VK_" ? "keycode" : "key";
-		var modStr = modifiers.join(" ");
-		keyElem.setAttribute(keyAttr, skey);
-		if (modStr) keyElem.setAttribute("modifiers", modStr);
-	},
-	
 	finalize: function(){
 		var tmpDir = this.dirService.get("TmpD", Components.interfaces.nsIFile);
 		tmpDir.append("send_to_wunderlist");
