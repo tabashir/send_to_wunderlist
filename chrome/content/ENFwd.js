@@ -349,6 +349,7 @@ var gsend_to_wunderlist = {
 		var messageText = this.createHeaderString();
 		messageText += info.thunderlinkText;
 		messageText += info.body;
+		messageText += this.newLineString;
 		os.write(messageText, messageText.length);
 		this.dumpTrace(messageText);
 
